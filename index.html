@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scheduler Intake System V1.5</title>
+    <title>Scheduler Intake System V1.6</title>
     <style>
         :root {
             --bg-main: #f4f6f8; --bg-surface: #ffffff; --border: #e0e4e8;
@@ -56,6 +56,7 @@
         .badge.hard, .badge.off_request { background: var(--badge-red); color: var(--badge-red-text); }
         .badge.wants_shift { background: var(--badge-blue); color: var(--badge-blue-text); }
         .badge.soft { background: #eae6ff; color: #403294; }
+        .badge.call_request, .badge.no_call { background: #f4f5f7; color: #42526e; }
         .badge.warning { background: var(--badge-yellow); color: var(--badge-yellow-text); }
         .badge.active { background: #e3fcef; color: #006644; }
 
@@ -85,7 +86,7 @@
 </head>
 <body>
     <nav class="sidebar">
-        <div class="logo">Scheduler Intake v1.5</div>
+        <div class="logo">Scheduler Intake v1.6</div>
         <ul class="nav-links">
             <li><a href="#" data-target="view-intake">1. Intake / Sources</a></li>
             <li><a href="#" data-target="view-master" class="active">2. Master Requests</a></li>
@@ -187,7 +188,7 @@
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <select id="cal-filter-provider"><option value="all">All Providers</option></select>
                     <button id="cal-prev" class="btn">&larr;</button>
-                    <h3 id="cal-month-label" style="min-width: 150px; text-align: center;">May 2026</h3>
+                    <h3 id="cal-month-label" style="min-width: 150px; text-align: center;">July 2026</h3>
                     <button id="cal-next" class="btn">&rarr;</button>
                 </div>
             </header>
@@ -307,16 +308,20 @@
                 { id: "prov_wetzel", name: "Dr. Wetzel" },
                 { id: "prov_quon", name: "Dr. Quon" }
             ],
+            // Database is now completely empty of mock requests, ready for Alex's trial imports
             sources: [],
             requests: []
         };
 
-        let appData = JSON.parse(localStorage.getItem('scheduler_v1_5')) || seedData;
+        // Note the bumped version key here (scheduler_v1_6) to force a clean slate without manual wiping
+        let appData = JSON.parse(localStorage.getItem('scheduler_v1_6')) || seedData;
         let stagedImports = []; 
-        let currentMonth = new Date(2026, 4, 1); 
+        
+        // Starts in July 2026 to match your upcoming mock trial data
+        let currentMonth = new Date(2026, 6, 1); 
 
         function saveData() {
-            localStorage.setItem('scheduler_v1_5', JSON.stringify(appData));
+            localStorage.setItem('scheduler_v1_6', JSON.stringify(appData));
             renderAll();
         }
 
@@ -342,6 +347,12 @@
         function renderSourcesTable() {
             const tbody = document.querySelector('#sources-table tbody');
             tbody.innerHTML = '';
+            
+            if (appData.sources.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No sources imported yet. Use "+ Import from Gemini" to start.</td></tr>`;
+                return;
+            }
+
             appData.sources.forEach(src => {
                 const reqCount = appData.requests.filter(r => r.source_id === src.id).length;
                 tbody.innerHTML += `<tr><td>${src.id.substring(0,8)}...</td><td>${src.label}</td><td>${src.date_logged}</td><td><span class="badge active">${src.status}</span></td><td>${reqCount}</td></tr>`;
@@ -361,6 +372,10 @@
                        (fType === 'all' || r.request_type === fType) &&
                        (fStatus === 'all' || r.status === fStatus);
             });
+            
+            if (reqs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">No requests found.</td></tr>`;
+            }
             
             reqs.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
@@ -536,7 +551,7 @@
                     <td>${reqs.filter(r => r.request_type === 'off_request' && r.request_strength==='hard').length}</td>
                     <td>${reqs.filter(r => r.request_type === 'off_request' && r.request_strength==='soft').length}</td>
                     <td>${reqs.filter(r => r.request_type === 'wants_shift').length}</td>
-                    <td>${reqs.filter(r => r.request_type.includes('call')).length}</td>
+                    <td>${reqs.filter(r => r.request_type === 'call_request' || r.request_type === 'no_call').length}</td>
                     <td style="color:var(--danger)">${reqs.filter(r => r.status === 'needs_review').length}</td>
                 </tr>`;
             });
