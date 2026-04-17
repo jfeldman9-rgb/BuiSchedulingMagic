@@ -3,95 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scheduler Intake System V1.7</title>
+    <title>Scheduler Intake System V2.1</title>
     <style>
         :root {
             --bg-main: #f4f6f8; --bg-surface: #ffffff; --border: #e0e4e8;
             --text-main: #1a1f24; --text-muted: #637381;
             --primary: #0052cc; --primary-hover: #0043a6; --danger: #de350b; --warning: #ffab00;
+            --badge-yellow: #fffae6; --badge-red: #ffebe6;
+        }
+
+        /* Dark Mode Variables */
+        body.dark-mode {
+            --bg-main: #0d1117; --bg-surface: #161b22; --border: #30363d;
+            --text-main: #c9d1d9; --text-muted: #8b949e;
+            --badge-yellow: #4d3c00; --badge-red: #4a0f00;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
-        body { display: flex; height: 100vh; background: var(--bg-main); color: var(--text-main); }
+        body { display: flex; height: 100vh; background: var(--bg-main); color: var(--text-main); transition: background 0.3s, color 0.3s; }
+
+        .hidden { display: none !important; }
 
         /* Layout */
-        .sidebar { width: 250px; background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; }
-        .logo { font-size: 1.2rem; font-weight: bold; margin-bottom: 30px; color: var(--primary); }
+        .sidebar { width: 250px; background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; transition: background 0.3s, border 0.3s; }
+        .logo { font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: var(--primary); }
         .nav-links { list-style: none; flex-grow: 1; }
         .nav-links li { margin-bottom: 5px; }
         .nav-links a { text-decoration: none; color: var(--text-muted); font-weight: 500; display: block; padding: 10px; border-radius: 6px; }
         .nav-links a:hover, .nav-links a.active { background: var(--bg-main); color: var(--primary); }
         .nav-actions { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
 
-        .content { flex-grow: 1; overflow-y: auto; padding: 30px; }
-        .view.hidden { display: none; }
+        .content { flex-grow: 1; overflow-y: auto; padding: 30px; position: relative; }
         .view-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
         
-        /* Filters */
-        .filter-bar { display: flex; gap: 10px; background: var(--bg-surface); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; }
-        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        /* Filters & Search */
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; background: var(--bg-surface); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; align-items: flex-end; transition: background 0.3s, border 0.3s; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 120px; }
         .filter-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
-        .filter-group select { padding: 6px; border: 1px solid var(--border); border-radius: 4px; }
+        .filter-group select, .filter-group input { padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-surface); color: var(--text-main); transition: background 0.3s, color 0.3s, border 0.3s; }
+        .search-box { flex: 2; min-width: 200px; }
 
         /* Buttons */
-        .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-surface); cursor: pointer; font-weight: 500; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-main); cursor: pointer; font-weight: 500; display: inline-flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.2s;}
         .btn:hover { background: var(--bg-main); }
         .btn.primary { background: var(--primary); color: white; border: none; }
         .btn.primary:hover { background: var(--primary-hover); }
         .btn.primary.outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
-        .btn.danger.outline { color: var(--danger); border-color: var(--danger); }
+        .btn.danger.outline { background: transparent; color: var(--danger); border-color: var(--danger); }
+        .btn.sm { padding: 4px 8px; font-size: 0.8rem; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Tables */
-        .table-container { background: var(--bg-surface); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; }
+        .table-container { background: var(--bg-surface); border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; transition: background 0.3s, border 0.3s; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th, td { padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-        th { background: #fafbfc; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+        th { background: var(--bg-main); font-weight: 600; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
         td { font-size: 0.9rem; }
         
-        /* Base Badges & Calendar Objects */
+        /* Badges & Calendar Objects */
         .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
         .cal-req { font-size: 0.75rem; padding: 3px 6px; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; cursor: pointer; border-left: 3px solid; margin-bottom: 2px; }
         
-        /* --- NEW COLOR ENGINE --- */
-        /* Green: Hard Shift */
+        /* Color Engine */
         .color-green { background: #e3fcef !important; color: #006644 !important; border-left-color: #00875a !important; }
-        /* Yellow: Soft Shift */
-        .color-yellow { background: #fffae6 !important; color: #a06a00 !important; border-left-color: #ffab00 !important; }
-        /* Red: Hard Off */
-        .color-red { background: #ffebe6 !important; color: #bf2600 !important; border-left-color: #de350b !important; }
-        /* Orange: Soft Off */
+        body.dark-mode .color-green { background: #003d29 !important; color: #79f2c0 !important; }
+        .color-yellow { background: var(--badge-yellow) !important; color: #a06a00 !important; border-left-color: #ffab00 !important; }
+        body.dark-mode .color-yellow { color: #ffca3a !important; }
+        .color-red { background: var(--badge-red) !important; color: #bf2600 !important; border-left-color: #de350b !important; }
+        body.dark-mode .color-red { color: #ff7b72 !important; }
         .color-orange { background: #fff4e5 !important; color: #d97706 !important; border-left-color: #d97706 !important; }
-        /* Gray: Call, No Call, Info */
+        body.dark-mode .color-orange { background: #4a2d00 !important; color: #fbd38d !important; }
         .color-gray { background: #f4f5f7 !important; color: #42526e !important; border-left-color: #a5adba !important; }
+        body.dark-mode .color-gray { background: #21262d !important; color: #c9d1d9 !important; }
         
-        /* Status Badges */
         .badge.active-status { background: #e3fcef; color: #006644; }
+        body.dark-mode .badge.active-status { background: #003d29; color: #79f2c0; }
         .badge.warning-status { background: var(--badge-yellow); color: var(--warning); }
 
         /* Calendar Grid */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-        .cal-header { background: #fafbfc; padding: 10px; text-align: center; font-weight: 600; font-size: 0.85rem; }
-        .cal-day { background: var(--bg-surface); min-height: 100px; padding: 5px; display: flex; flex-direction: column; gap: 4px; }
+        .cal-header { background: var(--bg-main); padding: 10px; text-align: center; font-weight: 600; font-size: 0.85rem; }
+        .cal-day { background: var(--bg-surface); min-height: 100px; padding: 5px; display: flex; flex-direction: column; gap: 4px; transition: background 0.3s; }
         .cal-day .date-num { font-size: 0.85rem; color: var(--text-muted); text-align: right; }
 
         /* Modals */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal.hidden { display: none; }
-        .modal-content { background: var(--bg-surface); padding: 25px; border-radius: 8px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-        .modal-content.large { width: 800px; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: var(--bg-surface); padding: 25px; border-radius: 8px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.3); transition: background 0.3s; }
+        .modal-content.large { width: 900px; }
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
         .form-group label { margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; }
-        .form-group input, .form-group select, .form-group textarea { padding: 8px; border: 1px solid var(--border); border-radius: 4px; }
+        .form-group input, .form-group select, .form-group textarea { padding: 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-surface); color: var(--text-main); }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
         /* Conflicts */
         .conflict-card { background: var(--badge-red); border-left: 4px solid var(--danger); padding: 15px; border-radius: 4px; margin-bottom: 10px; }
         .conflict-card h4 { color: var(--danger); margin-bottom: 5px; }
+        .conflict-card.warning { background: var(--badge-yellow); border-left-color: var(--warning); }
+        .conflict-card.warning h4 { color: #a06a00; }
+        body.dark-mode .conflict-card.warning h4 { color: #ffca3a; }
+
+        /* Toasts */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: var(--bg-surface); border-left: 4px solid var(--primary); padding: 15px 20px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: slideIn 0.3s ease-out; transition: opacity 0.3s; font-weight: 500; }
+        .toast.success { border-left-color: #00875a; }
+        .toast.error { border-left-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        /* Loading Overlay */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        body.dark-mode #loading-overlay { background: rgba(13,17,23,0.8); }
+        .spinner { border: 4px solid rgba(0,0,0,0.1); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        select.map-provider-select { padding: 4px; font-size: 0.8rem; border: 1px solid var(--danger); border-radius: 4px; }
     </style>
 </head>
 <body>
     <nav class="sidebar">
-        <div class="logo">Scheduler Intake v1.7</div>
+        <div class="logo">Scheduler Intake v2.1</div>
         <div style="font-size: 0.75rem; padding: 10px; background: var(--bg-main); border-radius: 6px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px;">
             <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#00875a; border-radius:50%;"></span> Hard Shift</div>
             <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#ffab00; border-radius:50%;"></span> Soft Shift</div>
@@ -101,46 +130,59 @@
         <ul class="nav-links">
             <li><a href="#" data-target="view-intake">1. Intake / Sources</a></li>
             <li><a href="#" data-target="view-master" class="active">2. Master Requests</a></li>
-            <li><a href="#" data-target="view-conflicts">3. Conflicts & Review <span id="nav-conflict-count" class="badge" style="background:var(--danger);color:white;">0</span></a></li>
+            <li><a href="#" data-target="view-conflicts">3. Conflicts & Review <span id="nav-conflict-count" class="badge hidden" style="background:var(--danger);color:white;">0</span></a></li>
             <li><a href="#" data-target="view-calendar">4. Calendar</a></li>
             <li><a href="#" data-target="view-summary">5. Provider Summary</a></li>
-            <li><a href="#" data-target="view-export">6. Export</a></li>
+            <li><a href="#" data-target="view-phase2">6. Phase 2 Constraints</a></li>
+            <li><a href="#" data-target="view-export">7. Settings & Export</a></li>
         </ul>
         <div class="nav-actions">
-            <button id="btn-import-json" class="btn primary outline">+ Import from Gemini</button>
+            <input type="file" id="file-upload" multiple accept="image/*" class="hidden">
+            <button id="btn-upload-images" class="btn primary">📷 Upload Screenshots</button>
             <button id="btn-add-request" class="btn">+ Manual Request</button>
-            <button id="btn-reset-data" class="btn danger outline">Wipe Data</button>
+            <button id="btn-manage-providers" class="btn outline">Manage Providers</button>
+            <button id="btn-toggle-dark" class="btn sm">🌙 Toggle Dark Mode</button>
         </div>
     </nav>
 
     <main class="content">
+        <div id="toast-container"></div>
+        
+        <div id="loading-overlay" class="hidden">
+            <div class="spinner"></div>
+            <h3 id="loading-text">Gemini is parsing screenshots...</h3>
+        </div>
         
         <section id="view-intake" class="view hidden">
             <header class="view-header">
                 <h2>Source Tracking</h2>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">Every request must trace back to a source.</p>
             </header>
+            <div style="margin-bottom: 15px;">
+                <button id="btn-import-json" class="btn sm outline">Paste JSON (Fallback)</button>
+            </div>
             <div class="table-container">
                 <table id="sources-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Source Label</th>
-                            <th>Date Logged</th>
-                            <th>Status</th>
-                            <th>Req Count</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>ID</th><th>Source Label</th><th>Method</th><th>Date Logged</th><th>Status</th><th>Req Count</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
         </section>
 
         <section id="view-master" class="view active">
-            <header class="view-header">
-                <h2>Master Request Table</h2>
-            </header>
+            <header class="view-header"><h2>Master Request Table</h2></header>
             <div class="filter-bar">
+                <div class="filter-group search-box">
+                    <label>Search</label>
+                    <input type="text" id="filter-search" placeholder="Search provider, notes, type...">
+                </div>
+                <div class="filter-group">
+                    <label>Date Range</label>
+                    <select id="filter-date-range">
+                        <option value="all">All Time</option>
+                        <option value="next_30">Next 30 Days</option>
+                        <option value="this_month">This Month</option>
+                    </select>
+                </div>
                 <div class="filter-group">
                     <label>Provider</label>
                     <select id="filter-provider"><option value="all">All Providers</option></select>
@@ -168,16 +210,7 @@
             <div class="table-container">
                 <table id="master-table">
                     <thead>
-                        <tr>
-                            <th>Provider</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Type / Strength</th>
-                            <th>Notes</th>
-                            <th>Source</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
+                        <tr><th>Provider</th><th>Start Date</th><th>End Date</th><th>Type / Strength</th><th>Notes</th><th>Source</th><th>Status</th><th>Actions</th></tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -185,11 +218,11 @@
         </section>
 
         <section id="view-conflicts" class="view hidden">
-            <header class="view-header">
-                <h2>Conflicts & Data Review</h2>
-            </header>
-            <div id="conflicts-container">
-                </div>
+            <header class="view-header"><h2>Conflicts & Data Review</h2></header>
+            <div style="margin-bottom: 15px;">
+                <button id="btn-mark-all-active" class="btn primary outline">Mark All "Needs Review" As Active</button>
+            </div>
+            <div id="conflicts-container"></div>
         </section>
 
         <section id="view-calendar" class="view hidden">
@@ -198,65 +231,90 @@
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <select id="cal-filter-provider"><option value="all">All Providers</option></select>
                     <button id="cal-prev" class="btn">&larr;</button>
-                    <h3 id="cal-month-label" style="min-width: 150px; text-align: center;">July 2026</h3>
+                    <h3 id="cal-month-label" style="min-width: 150px; text-align: center;">Month Year</h3>
                     <button id="cal-next" class="btn">&rarr;</button>
                 </div>
             </header>
-            <div id="calendar-grid" class="calendar-grid">
-                </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
         </section>
 
         <section id="view-summary" class="view hidden">
             <header class="view-header"><h2>Provider Summary</h2></header>
             <div class="table-container">
                 <table id="summary-table">
-                    <thead>
-                        <tr>
-                            <th>Provider</th>
-                            <th>Total Reqs</th>
-                            <th>Hard Off</th>
-                            <th>Soft Off</th>
-                            <th>Wants Shift</th>
-                            <th>Call/No-Call</th>
-                            <th>Unresolved</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Provider</th><th>Total Reqs</th><th>Hard Off</th><th>Soft Off</th><th>Wants Shift</th><th>Call/No-Call</th><th>Needs Review</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="view-phase2" class="view hidden">
+            <header class="view-header">
+                <h2>Phase 2: Workload Constraints Preview</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Comparing active "Wants Shift" requests against provider minimum/maximum targets.</p>
+            </header>
+            <div class="table-container">
+                <table id="phase2-table">
+                    <thead><tr><th>Provider</th><th>Role</th><th>Min Target</th><th>Max Target</th><th>Requested Shifts</th><th>Status</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
         </section>
 
         <section id="view-export" class="view hidden">
-            <header class="view-header"><h2>Export Data</h2></header>
-            <div style="display: flex; gap: 15px;">
-                <button id="btn-export-csv" class="btn primary">Export Requests to CSV</button>
-                <button id="btn-export-json" class="btn outline">Download JSON Backup</button>
+            <header class="view-header"><h2>Settings & Export</h2></header>
+            <div style="display: flex; flex-direction: column; gap: 20px; max-width: 600px;">
+                <div class="table-container" style="padding: 20px;">
+                    <h3>Data Export</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Download requests for scheduling or backup.</p>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-export-csv" class="btn primary">Export Requests to CSV</button>
+                        <button id="btn-export-json" class="btn outline">Download JSON Backup</button>
+                    </div>
+                </div>
+                <div class="table-container" style="padding: 20px;">
+                    <h3>Gemini API Configuration</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Stored locally in your browser to power screenshot parsing.</p>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-set-api" class="btn outline">Set / Update API Key</button>
+                        <button id="btn-clear-api" class="btn danger outline">Clear API Key</button>
+                    </div>
+                </div>
+                <div class="table-container" style="padding: 20px; border-color: var(--danger);">
+                    <h3 style="color: var(--danger);">Danger Zone</h3>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button id="btn-reset-data" class="btn danger outline">Wipe All Requests & Sources</button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
 
     <div id="import-modal" class="modal hidden">
         <div class="modal-content large">
-            <h3>Stage 1: Verify Gemini Import</h3>
-            <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Review parsed data before committing to the master database.</p>
+            <h3>Stage 1: Verify Import</h3>
+            <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Review parsed data. Invalid rows will be blocked from importing. Unknown providers must be mapped.</p>
             
             <div class="form-group">
-                <label>Source Label (Where did these come from?)</label>
-                <input type="text" id="import-source-label" placeholder="e.g., Dr. Smith text msg screenshot May 15" required>
+                <label>Source Label (Required)</label>
+                <input type="text" id="import-source-label" placeholder="e.g., Dr. Smith text msg screenshot May 15">
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <span id="import-stats" style="font-size:0.85rem; font-weight:bold;"></span>
+                <label style="font-size:0.85rem;"><input type="checkbox" id="import-skip-dupes" checked> Skip Likely Duplicates</label>
             </div>
 
-            <div class="table-container" style="max-height: 300px; margin-bottom: 15px;">
+            <div class="table-container" style="max-height: 400px; margin-bottom: 15px; overflow-y:auto;">
                 <table id="import-preview-table">
-                    <thead>
-                        <tr><th>Provider</th><th>Start</th><th>End</th><th>Type</th><th>Notes</th><th>Warnings</th></tr>
-                    </thead>
+                    <thead><tr><th>Status</th><th>Provider</th><th>Start</th><th>End</th><th>Type</th><th>Notes / Issues</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
             
             <div class="modal-actions">
-                <button class="btn" onclick="document.getElementById('import-modal').classList.add('hidden')">Cancel Import</button>
-                <button class="btn primary" id="btn-confirm-import">Confirm & Save</button>
+                <button class="btn" id="btn-cancel-import">Cancel</button>
+                <button class="btn primary" id="btn-confirm-import">Confirm Valid Rows</button>
             </div>
         </div>
     </div>
@@ -267,13 +325,10 @@
             <form id="request-form">
                 <input type="hidden" id="req-id">
                 <input type="hidden" id="req-source-id">
-                <div class="form-group">
-                    <label>Provider</label>
-                    <select id="req-provider" required></select>
-                </div>
+                <div class="form-group"><label>Provider</label><select id="req-provider" required></select></div>
                 <div style="display: flex; gap: 10px;">
                     <div class="form-group" style="flex: 1;"><label>Start Date</label><input type="date" id="req-start" required></div>
-                    <div class="form-group" style="flex: 1;"><label>End Date</label><input type="date" id="req-end" required></div>
+                    <div class="form-group" style="flex: 1;"><label>End Date</label><input type="date" id="req-end"></div>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <div class="form-group" style="flex: 1;"><label>Type</label>
@@ -289,91 +344,179 @@
                         <select id="req-strength"><option value="hard">Hard</option><option value="soft">Soft</option></select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Status</label>
-                    <select id="req-status"><option value="active">Active</option><option value="needs_review">Needs Review</option><option value="resolved">Resolved/Ignored</option></select>
-                </div>
-                <div class="form-group">
-                    <label>Notes</label><input type="text" id="req-notes">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn" onclick="document.getElementById('request-modal').classList.add('hidden')">Cancel</button>
-                    <button type="submit" class="btn primary">Save</button>
-                </div>
+                <div class="form-group"><label>Status</label><select id="req-status"><option value="active">Active</option><option value="needs_review">Needs Review</option><option value="resolved">Resolved/Ignored</option></select></div>
+                <div class="form-group"><label>Notes</label><input type="text" id="req-notes"></div>
+                <div class="modal-actions"><button type="button" class="btn" id="btn-cancel-req-modal">Cancel</button><button type="submit" class="btn primary">Save</button></div>
             </form>
         </div>
     </div>
 
+    <div id="providers-modal" class="modal hidden">
+        <div class="modal-content large">
+            <h3>Manage Providers & Phase 2 Rules</h3>
+            <div class="table-container" style="max-height: 250px; margin-bottom: 15px; overflow-y: auto;">
+                <table id="providers-table">
+                    <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Min</th><th>Max</th><th>Nights?</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div style="display:flex; gap:10px; align-items: flex-end; flex-wrap: wrap;">
+                <div class="form-group" style="flex:2; margin:0;"><input type="text" id="new-prov-name" placeholder="Name (e.g. Dr. House)"></div>
+                <div class="form-group" style="flex:1; margin:0;">
+                    <select id="new-prov-role"><option value="staff">Staff</option><option value="partner">Partner</option></select>
+                </div>
+                <div class="form-group" style="flex:1; margin:0;"><input type="number" id="new-prov-min" placeholder="Min Shifts" value="0"></div>
+                <div class="form-group" style="flex:1; margin:0;"><input type="number" id="new-prov-max" placeholder="Max Shifts" value="20"></div>
+                <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="new-prov-nights" checked> Nights</label>
+                <button class="btn primary" id="btn-save-provider">Add</button>
+            </div>
+            <div class="modal-actions"><button class="btn" id="btn-close-providers-modal">Done</button></div>
+        </div>
+    </div>
+
+    <div id="error-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 style="color:var(--danger);">API Parsing Error</h3>
+            <p>Gemini returned an invalid format. Raw response:</p>
+            <textarea id="raw-error-text" style="width:100%; height:200px; margin-top:10px; font-family:monospace; font-size:0.8rem;" readonly></textarea>
+            <div class="modal-actions"><button class="btn" onclick="document.getElementById('error-modal').classList.add('hidden')">Close</button></div>
+        </div>
+    </div>
+
     <script>
-        // --- 1. State Management & Schema ---
+        // --- 1. State & Utilities ---
         const seedData = {
+            // Added comments inside to guide Alex, and upgraded schema for Phase 2
             providers: [
-                { id: "prov_abui", name: "Alex Bui" },
-                { id: "prov_jfeldman", name: "Jason Feldman" },
-                { id: "prov_smith", name: "Sarah Smith" },
-                { id: "prov_minzer", name: "Dr. Minzer" },
-                { id: "prov_anderson", name: "Dr. Anderson" },
-                { id: "prov_gentz", name: "Dr. Gentz" },
-                { id: "prov_bazzell", name: "Dr. Bazzell" },
-                { id: "prov_wetzel", name: "Dr. Wetzel" },
-                { id: "prov_quon", name: "Dr. Quon" }
+                { id: "prov_abui", name: "Alex Bui", can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15, priority_score: 1, role: "partner" },
+                { id: "prov_jfeldman", name: "Jason Feldman", can_do_nights: true, can_do_peds: false, min_shifts: 8, max_shifts: 12, priority_score: 1, role: "partner" },
+                { id: "prov_smith", name: "Sarah Smith", can_do_nights: true, can_do_peds: true, min_shifts: 12, max_shifts: 16, priority_score: 2, role: "staff" }
+                // NOTE FOR ALEX: Add the rest of the group via the "Manage Providers" button in the app!
             ],
             sources: [],
             requests: []
         };
 
-        // Bumped version key to force refresh
-        let appData = JSON.parse(localStorage.getItem('scheduler_v1_7')) || seedData;
+        let appData = JSON.parse(localStorage.getItem('scheduler_v2_1')) || seedData;
         let stagedImports = []; 
-        let currentMonth = new Date(2026, 6, 1); // July 2026
+        let stagedImportMethod = 'manual';
+        
+        const today = new Date();
+        let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1); 
+
+        // Dark Mode Init
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
         function saveData() {
-            localStorage.setItem('scheduler_v1_7', JSON.stringify(appData));
+            localStorage.setItem('scheduler_v2_1', JSON.stringify(appData));
             renderAll();
         }
 
-        // --- NEW Color Logic Engine ---
-        function getColorClass(type, strength) {
-            if (type === 'wants_shift') {
-                return strength === 'hard' ? 'color-green' : 'color-yellow';
-            } else if (type === 'off_request') {
-                return strength === 'hard' ? 'color-red' : 'color-orange';
-            } else {
-                return 'color-gray';
-            }
+        const escapeHtml = (unsafe) => {
+            if (typeof unsafe !== 'string') return unsafe;
+            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        };
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
-        // --- 2. Core Rendering ---
+        function getColorClass(type, strength) {
+            if (type === 'wants_shift') return strength === 'hard' ? 'color-green' : 'color-yellow';
+            if (type === 'off_request') return strength === 'hard' ? 'color-red' : 'color-orange';
+            return 'color-gray';
+        }
+
         function getProviderName(id) {
             const p = appData.providers.find(p => p.id === id);
-            return p ? p.name : `<span style="color:red">Unknown (${id})</span>`;
+            return p ? escapeHtml(p.name) : `<span style="color:var(--danger)">Unknown (${escapeHtml(id)})</span>`;
         }
         function getSourceLabel(id) {
             const s = appData.sources.find(s => s.id === id);
-            return s ? s.label : "Manual/Unknown";
+            return s ? escapeHtml(s.label) : "Manual/Unknown";
         }
 
+        // --- 2. Conflict Computation Engine (Pure) ---
+        function computeConflicts(requests) {
+            let conflicts = [];
+            const activeReqs = requests.filter(r => r.status === 'active' || r.status === 'needs_review');
+            
+            activeReqs.forEach(req => {
+                if (!appData.providers.find(p => p.id === req.provider_id)) {
+                    conflicts.push({ type: 'unmapped', provider_id: req.provider_id, request_ids: [req.id], severity: 'high', message: `Request mapped to unknown provider: ${escapeHtml(req.provider_id)}` });
+                }
+            });
+
+            const dateMap = {};
+            activeReqs.forEach(req => {
+                if (!dateMap[req.provider_id]) dateMap[req.provider_id] = [];
+                dateMap[req.provider_id].push(req);
+            });
+
+            for (const provId in dateMap) {
+                const pReqs = dateMap[provId];
+                for (let i = 0; i < pReqs.length; i++) {
+                    for (let j = i + 1; j < pReqs.length; j++) {
+                        const r1 = pReqs[i], r2 = pReqs[j];
+                        const s1 = r1.start_date, e1 = r1.end_date || r1.start_date;
+                        const s2 = r2.start_date, e2 = r2.end_date || r2.start_date;
+                        
+                        if (s1 <= e2 && s2 <= e1) {
+                            const isContradiction = (r1.request_type === 'off_request' && r2.request_type === 'wants_shift') || 
+                                                    (r2.request_type === 'off_request' && r1.request_type === 'wants_shift');
+                            const sev = isContradiction ? 'high' : 'medium';
+                            const msg = isContradiction ? `Contradiction: Off request overlaps Wants Shift between ${s1} and ${e2}.` 
+                                                        : `Overlap: Multiple active requests touch ${s1}.`;
+                            conflicts.push({ type: isContradiction ? 'contradiction' : 'overlap', provider_id: provId, request_ids: [r1.id, r2.id], start_date: s1, end_date: e2, severity: sev, message: msg });
+                        }
+                    }
+                }
+            }
+            
+            const uniqueConflicts = [];
+            const seenKeys = new Set();
+            conflicts.forEach(c => {
+                const key = c.request_ids.sort().join('_');
+                if(!seenKeys.has(key)) { seenKeys.add(key); uniqueConflicts.push(c); }
+            });
+            return uniqueConflicts;
+        }
+
+        // --- 3. Rendering ---
         function renderAll() {
             populateSelects();
             renderSourcesTable();
             renderMasterTable();
             renderCalendar();
             renderSummary();
+            renderPhase2();
             renderConflicts();
+        }
+
+        function populateSelects() {
+            const options = appData.providers.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+            ['req-provider', 'filter-provider', 'cal-filter-provider'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const currVal = el.value;
+                el.innerHTML = (id.includes('filter') ? `<option value="all">All Providers</option>` : '') + options;
+                if (document.querySelector(`#${id} option[value="${currVal}"]`)) el.value = currVal;
+            });
         }
 
         function renderSourcesTable() {
             const tbody = document.querySelector('#sources-table tbody');
             tbody.innerHTML = '';
+            if (appData.sources.length === 0) return tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No sources imported yet.</td></tr>`;
             
-            if (appData.sources.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No sources imported yet. Use "+ Import from Gemini" to start.</td></tr>`;
-                return;
-            }
-
             appData.sources.forEach(src => {
                 const reqCount = appData.requests.filter(r => r.source_id === src.id).length;
-                tbody.innerHTML += `<tr><td>${src.id.substring(0,8)}...</td><td>${src.label}</td><td>${src.date_logged}</td><td><span class="badge active-status">${src.status}</span></td><td>${reqCount}</td></tr>`;
+                tbody.innerHTML += `<tr><td>${escapeHtml(src.id).substring(0,8)}...</td><td>${escapeHtml(src.label)}</td><td>${escapeHtml(src.import_method || 'manual')}</td><td>${escapeHtml(src.date_logged)}</td><td><span class="badge active-status">${escapeHtml(src.status)}</span></td><td>${reqCount}</td></tr>`;
             });
         }
 
@@ -382,182 +525,79 @@
             const fProv = document.getElementById('filter-provider').value;
             const fType = document.getElementById('filter-type').value;
             const fStatus = document.getElementById('filter-status').value;
+            const fSearch = document.getElementById('filter-search').value.toLowerCase();
+            const fDate = document.getElementById('filter-date-range').value;
             
             tbody.innerHTML = '';
 
+            const todayStr = new Date().toISOString().split('T')[0];
+            let endRangeStr = "9999-12-31";
+            let startRangeStr = "0000-01-01";
+            
+            if (fDate === 'next_30') {
+                startRangeStr = todayStr;
+                const d = new Date(); d.setDate(d.getDate() + 30);
+                endRangeStr = d.toISOString().split('T')[0];
+            } else if (fDate === 'this_month') {
+                const d = new Date();
+                startRangeStr = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+                endRangeStr = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+            }
+
             let reqs = appData.requests.filter(r => {
-                return (fProv === 'all' || r.provider_id === fProv) &&
-                       (fType === 'all' || r.request_type === fType) &&
-                       (fStatus === 'all' || r.status === fStatus);
+                const provName = (appData.providers.find(p=>p.id===r.provider_id)?.name || '').toLowerCase();
+                const notes = (r.notes || '').toLowerCase();
+                
+                const matchProv = (fProv === 'all' || r.provider_id === fProv);
+                const matchType = (fType === 'all' || r.request_type === fType);
+                const matchStatus = (fStatus === 'all' || r.status === fStatus);
+                const matchSearch = (fSearch === '' || provName.includes(fSearch) || notes.includes(fSearch));
+                const matchDate = (fDate === 'all' || (r.start_date <= endRangeStr && (r.end_date || r.start_date) >= startRangeStr));
+                
+                return matchProv && matchType && matchStatus && matchSearch && matchDate;
             });
             
-            if (reqs.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">No requests found.</td></tr>`;
-            }
+            if (reqs.length === 0) return tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No requests found.</td></tr>`;
             
-            reqs.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-
-            reqs.forEach(req => {
+            reqs.sort((a, b) => new Date(a.start_date) - new Date(b.start_date)).forEach(req => {
                 const isRange = req.start_date !== req.end_date;
-                const dynamicColorClass = getColorClass(req.request_type, req.request_strength);
-                const displayType = req.request_type.replace('_', ' ');
-
+                const cClass = getColorClass(req.request_type, req.request_strength);
+                
                 tbody.innerHTML += `
                     <tr style="${req.status === 'resolved' ? 'opacity: 0.5' : ''}">
                         <td><strong>${getProviderName(req.provider_id)}</strong></td>
-                        <td>${req.start_date}</td>
-                        <td>${isRange ? req.end_date : '<span style="color:#ccc">-</span>'}</td>
-                        <td><span class="badge ${dynamicColorClass}">${displayType} (${req.request_strength})</span></td>
-                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${req.notes || ''}</td>
-                        <td style="font-size: 0.8rem; color: #666;">${getSourceLabel(req.source_id).substring(0,15)}</td>
-                        <td><span class="badge ${req.status === 'active' ? 'active-status' : 'warning-status'}">${req.status}</span></td>
+                        <td>${escapeHtml(req.start_date)}</td>
+                        <td>${isRange ? escapeHtml(req.end_date) : '<span style="color:var(--text-muted)">-</span>'}</td>
+                        <td><span class="badge ${cClass}">${escapeHtml(req.request_type).replace('_', ' ')} (${escapeHtml(req.request_strength)})</span></td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(req.notes || '')}</td>
+                        <td style="font-size: 0.8rem; color: var(--text-muted);" title="${getSourceLabel(req.source_id)}">${getSourceLabel(req.source_id).substring(0,15)}</td>
+                        <td><span class="badge ${req.status === 'active' ? 'active-status' : 'warning-status'}">${escapeHtml(req.status).replace('_',' ')}</span></td>
                         <td>
-                            <button class="btn" onclick="editRequest('${req.id}')">Edit</button>
+                            <button class="btn sm" onclick="editRequest('${escapeHtml(req.id)}')">Edit</button>
+                            <button class="btn sm danger outline" onclick="deleteRequest('${escapeHtml(req.id)}')">Del</button>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
             });
         }
 
-        // --- 3. Conflict Engine ---
         function renderConflicts() {
             const container = document.getElementById('conflicts-container');
             const badgeCount = document.getElementById('nav-conflict-count');
             container.innerHTML = '';
-            let conflicts = [];
-
-            const activeReqs = appData.requests.filter(r => r.status === 'active' || r.status === 'needs_review');
-            const dateMap = {};
             
-            activeReqs.forEach(req => {
-                const key = `${req.provider_id}_${req.start_date}`;
-                if (!dateMap[key]) dateMap[key] = [];
-                dateMap[key].push(req);
-            });
-
-            activeReqs.forEach(req => {
-                if (!appData.providers.find(p => p.id === req.provider_id)) {
-                    conflicts.push(`<h4>Unmapped Provider</h4><p>Request ${req.id} points to unknown provider: ${req.provider_id}.</p>`);
-                }
-            });
-
-            for (const [key, reqs] of Object.entries(dateMap)) {
-                if (reqs.length > 1) {
-                    const hasOff = reqs.some(r => r.request_type === 'off_request');
-                    const hasWork = reqs.some(r => r.request_type === 'wants_shift');
-                    const provName = getProviderName(reqs[0].provider_id);
-                    
-                    if (hasOff && hasWork) {
-                        conflicts.push(`<h4>Contradiction!</h4><p><strong>${provName}</strong> requested OFF and requested a SHIFT on <strong>${reqs[0].start_date}</strong>.</p>`);
-                    } else {
-                        conflicts.push(`<h4>Duplicate/Overlap</h4><p><strong>${provName}</strong> has ${reqs.length} separate requests starting on <strong>${reqs[0].start_date}</strong>. Ensure these aren't duplicate imports.</p>`);
-                    }
-                }
-            }
-
-            badgeCount.textContent = conflicts.length;
+            const conflicts = computeConflicts(appData.requests);
+            
             if (conflicts.length === 0) {
-                badgeCount.style.display = 'none';
+                badgeCount.classList.add('hidden');
                 container.innerHTML = `<p style="color: var(--text-muted);">No active conflicts detected. Clean data!</p>`;
             } else {
-                badgeCount.style.display = 'inline-block';
+                badgeCount.textContent = conflicts.length;
+                badgeCount.classList.remove('hidden');
                 conflicts.forEach(c => {
-                    container.innerHTML += `<div class="conflict-card">${c}</div>`;
+                    const cardClass = c.severity === 'high' ? 'conflict-card' : 'conflict-card warning';
+                    container.innerHTML += `<div class="${cardClass}"><h4>${escapeHtml(c.type.toUpperCase())}: ${getProviderName(c.provider_id)}</h4><p>${escapeHtml(c.message)}</p></div>`;
                 });
             }
-        }
-
-        // --- 4. Import & Validation Pipeline ---
-        document.getElementById('btn-import-json').addEventListener('click', () => {
-            const jsonString = prompt("Paste the JSON output from Gemini:");
-            if (!jsonString) return;
-
-            try {
-                const cleanedString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
-                stagedImports = JSON.parse(cleanedString);
-                if (!Array.isArray(stagedImports)) throw new Error("Not an array");
-
-                const tbody = document.querySelector('#import-preview-table tbody');
-                tbody.innerHTML = '';
-                
-                stagedImports.forEach((req, idx) => {
-                    req.start_date = req.start_date || "Missing";
-                    req.end_date = req.end_date || req.start_date; 
-                    
-                    let warnings = [];
-                    if (!appData.providers.find(p => p.id === req.provider_id)) warnings.push("Unknown Provider");
-                    if (req.start_date === "Missing") warnings.push("No Date");
-
-                    tbody.innerHTML += `
-                        <tr style="${warnings.length > 0 ? 'background: var(--badge-red);' : ''}">
-                            <td>${req.provider_id}</td>
-                            <td>${req.start_date}</td>
-                            <td>${req.end_date}</td>
-                            <td>${req.request_type}</td>
-                            <td>${req.notes || ''}</td>
-                            <td style="color:var(--danger); font-weight:bold;">${warnings.join(', ')}</td>
-                        </tr>
-                    `;
-                });
-
-                document.getElementById('import-source-label').value = `Gemini Import ${new Date().toLocaleTimeString()}`;
-                document.getElementById('import-modal').classList.remove('hidden');
-
-            } catch (error) {
-                alert("Invalid JSON format. Make sure you copied exactly from Gemini.");
-            }
-        });
-
-        document.getElementById('btn-confirm-import').addEventListener('click', () => {
-            const label = document.getElementById('import-source-label').value;
-            if (!label) return alert("You must provide a source label.");
-
-            const sourceId = `src_${Date.now()}`;
-            appData.sources.push({
-                id: sourceId,
-                label: label,
-                date_logged: new Date().toISOString().split('T')[0],
-                status: "imported"
-            });
-
-            stagedImports.forEach(req => {
-                req.id = req.id && !appData.requests.find(r=>r.id===req.id) ? req.id : `req_${Date.now()}_${Math.random()}`;
-                req.source_id = sourceId;
-                req.status = 'active';
-                req.created_at = new Date().toISOString().split('T')[0];
-                appData.requests.push(req);
-            });
-
-            stagedImports = [];
-            saveData();
-            document.getElementById('import-modal').classList.add('hidden');
-            document.querySelector('[data-target="view-master"]').click();
-        });
-
-        // --- UI Interactions & Boilerplate ---
-        document.querySelectorAll('.nav-links a').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-                e.currentTarget.classList.add('active');
-                document.getElementById(e.currentTarget.dataset.target).classList.remove('hidden');
-            });
-        });
-
-        document.querySelectorAll('.filter-bar select').forEach(s => s.addEventListener('change', renderMasterTable));
-
-        function populateSelects() {
-            const options = appData.providers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-            document.getElementById('req-provider').innerHTML = options;
-            
-            const currProvFilter = document.getElementById('filter-provider').value;
-            document.getElementById('filter-provider').innerHTML = `<option value="all">All Providers</option>` + options;
-            document.getElementById('filter-provider').value = currProvFilter;
-
-            const currCalFilter = document.getElementById('cal-filter-provider').value;
-            document.getElementById('cal-filter-provider').innerHTML = `<option value="all">All Providers</option>` + options;
-            document.getElementById('cal-filter-provider').value = currCalFilter;
         }
 
         function renderSummary() {
@@ -566,13 +606,41 @@
             appData.providers.forEach(prov => {
                 const reqs = appData.requests.filter(r => r.provider_id === prov.id);
                 tbody.innerHTML += `<tr>
-                    <td><strong>${prov.name}</strong></td>
+                    <td><strong>${escapeHtml(prov.name)}</strong></td>
                     <td>${reqs.length}</td>
                     <td>${reqs.filter(r => r.request_type === 'off_request' && r.request_strength==='hard').length}</td>
                     <td>${reqs.filter(r => r.request_type === 'off_request' && r.request_strength==='soft').length}</td>
                     <td>${reqs.filter(r => r.request_type === 'wants_shift').length}</td>
                     <td>${reqs.filter(r => r.request_type === 'call_request' || r.request_type === 'no_call').length}</td>
                     <td style="color:var(--danger)">${reqs.filter(r => r.status === 'needs_review').length}</td>
+                </tr>`;
+            });
+        }
+
+        function renderPhase2() {
+            const tbody = document.querySelector('#phase2-table tbody');
+            tbody.innerHTML = '';
+            appData.providers.forEach(prov => {
+                // Approximate "Requested Shifts" by looking at active 'wants_shift' requests
+                let shiftCount = 0;
+                appData.requests.filter(r => r.provider_id === prov.id && r.request_type === 'wants_shift' && r.status === 'active').forEach(r => {
+                    const s = new Date(r.start_date);
+                    const e = new Date(r.end_date || r.start_date);
+                    // Add 1 day for inclusive math
+                    shiftCount += Math.round((e - s) / (1000 * 60 * 60 * 24)) + 1;
+                });
+
+                let statusBadge = `<span class="badge active-status">Good</span>`;
+                if (prov.min_shifts > 0 && shiftCount < prov.min_shifts) statusBadge = `<span class="badge warning-status">Under Min</span>`;
+                if (prov.max_shifts > 0 && shiftCount > prov.max_shifts) statusBadge = `<span class="badge" style="background:var(--danger);color:white;">Over Max</span>`;
+
+                tbody.innerHTML += `<tr>
+                    <td><strong>${escapeHtml(prov.name)}</strong></td>
+                    <td><span style="text-transform:capitalize;">${escapeHtml(prov.role || 'staff')}</span></td>
+                    <td>${prov.min_shifts || 0}</td>
+                    <td>${prov.max_shifts || 'N/A'}</td>
+                    <td><strong>${shiftCount}</strong></td>
+                    <td>${statusBadge}</td>
                 </tr>`;
             });
         }
@@ -585,124 +653,307 @@
             
             const year = currentMonth.getFullYear();
             const month = currentMonth.getMonth();
-            monthLabel.textContent = new Date(year, month, 1).toLocaleString('default', {
-                month: 'long',
-                year: 'numeric'
-            });
-            grid.innerHTML = `
-                <div class="cal-header">Sun</div>
-                <div class="cal-header">Mon</div>
-                <div class="cal-header">Tue</div>
-                <div class="cal-header">Wed</div>
-                <div class="cal-header">Thu</div>
-                <div class="cal-header">Fri</div>
-                <div class="cal-header">Sat</div>
-            `;
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            monthLabel.textContent = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+            grid.innerHTML = `<div class="cal-header">Sun</div><div class="cal-header">Mon</div><div class="cal-header">Tue</div><div class="cal-header">Wed</div><div class="cal-header">Thu</div><div class="cal-header">Fri</div><div class="cal-header">Sat</div>`;
             
-            for (let i = 0; i < firstDay; i++) {
-                grid.innerHTML += `<div class="cal-day"></div>`;
-            }
+            for (let i = 0; i < new Date(year, month, 1).getDay(); i++) grid.innerHTML += `<div class="cal-day"></div>`;
             
-            for (let day = 1; day <= daysInMonth; day++) {
+            for (let day = 1; day <= new Date(year, month + 1, 0).getDate(); day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const dayReqs = appData.requests.filter(r => {
-                    const matchProv = filterProv === 'all' || r.provider_id === filterProv;
-                    const endDate = r.end_date || r.start_date;
-                    const inRange = r.start_date <= dateStr && endDate >= dateStr;
-                    return matchProv && inRange;
+                    const eDate = r.end_date || r.start_date;
+                    return (filterProv === 'all' || r.provider_id === filterProv) && (r.start_date <= dateStr && eDate >= dateStr);
                 });
                 
-                // Color Code Implementation on Calendar
-                const reqHTML = dayReqs.map(r => {
-                    const dynamicColorClass = getColorClass(r.request_type, r.request_strength);
-                    const strengthLabel = r.request_strength === 'hard' ? '(H)' : '(S)';
-                    return `
-                        <div class="cal-req ${dynamicColorClass}" onclick="editRequest('${r.id}')" title="${r.notes || ''}">
-                            ${getProviderName(r.provider_id).split(' ')[0]} ${strengthLabel}
-                        </div>
-                    `;
-                }).join('');
-                
-                grid.innerHTML += `
-                    <div class="cal-day">
-                        <div class="date-num">${day}</div>
-                        ${reqHTML}
-                    </div>
-                `;
+                const reqHTML = dayReqs.map(r => `<div class="cal-req ${getColorClass(r.request_type, r.request_strength)}" onclick="editRequest('${escapeHtml(r.id)}')">${getProviderName(r.provider_id).split(' ')[0]} ${r.request_strength === 'hard' ? '(H)' : '(S)'}</div>`).join('');
+                grid.innerHTML += `<div class="cal-day"><div class="date-num">${day}</div>${reqHTML}</div>`;
             }
         }
 
-        document.getElementById('cal-prev').addEventListener('click', () => {
-            currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
-            renderCalendar();
-        });
-        document.getElementById('cal-next').addEventListener('click', () => {
-            currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-            renderCalendar();
-        });
+        // --- Event Listeners: Filtering & Navigation ---
+        document.getElementById('filter-provider').addEventListener('change', renderMasterTable);
+        document.getElementById('filter-type').addEventListener('change', renderMasterTable);
+        document.getElementById('filter-status').addEventListener('change', renderMasterTable);
+        document.getElementById('filter-date-range').addEventListener('change', renderMasterTable);
+        document.getElementById('filter-search').addEventListener('input', renderMasterTable);
         document.getElementById('cal-filter-provider').addEventListener('change', renderCalendar);
+        
+        document.getElementById('cal-prev').addEventListener('click', () => { currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1); renderCalendar(); });
+        document.getElementById('cal-next').addEventListener('click', () => { currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1); renderCalendar(); });
 
-        // Modal Form Handling
-        const reqModal = document.getElementById('request-modal');
+        document.getElementById('btn-mark-all-active').addEventListener('click', () => {
+            let changed = 0;
+            appData.requests.forEach(r => { if(r.status === 'needs_review') { r.status = 'active'; changed++; } });
+            if(changed > 0) { saveData(); showToast(`Marked ${changed} requests as Active.`); }
+        });
+
+        // Dark Mode Toggle
+        document.getElementById('btn-toggle-dark').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        });
+
+        // --- 4. Import & Validation Pipeline ---
+        function getDynamicPrompt() {
+            const roster = appData.providers.map(p => `- "${p.name}" -> \`${p.id}\``).join('\n');
+            return `You are an operations assistant for an anesthesia group. Extract scheduling requests from screenshots into a strict JSON array.
+Step 1: Map sender to exact ID below.
+${roster}
+(If unknown, output "prov_UNKNOWN" and note detected name in "notes")
+Step 2: Output ONLY a JSON array. Do not wrap in markdown \`\`\`json. No comments.
+[{"provider_id": "prov_id", "request_type": "off_request|wants_shift|call_request|no_call|info", "request_strength": "hard|soft", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD", "notes": "string"}]
+Rules: Year is ${new Date().getFullYear()}. Single days must have identical start_date and end_date. Preserve ambiguity as "soft" strength.`;
+        }
+
+        function validateImportRow(req) {
+            let issues = [];
+            req.provider_id = req.provider_id || "prov_UNKNOWN";
+            req.start_date = req.start_date || "";
+            req.end_date = req.end_date || req.start_date;
+            req.request_type = req.request_type || "info";
+            req.request_strength = req.request_strength || "soft";
+            req.notes = req.notes || "";
+
+            const validTypes = ['off_request','wants_shift','call_request','no_call','info'];
+            if (!appData.providers.find(p => p.id === req.provider_id)) issues.push('Unknown Provider');
+            if (!req.start_date.match(/^\d{4}-\d{2}-\d{2}$/)) issues.push('Invalid Start Date');
+            else if (parseInt(req.start_date.substring(0,4)) > new Date().getFullYear() + 1) issues.push('Future Year Warning');
+            
+            if (!req.end_date.match(/^\d{4}-\d{2}-\d{2}$/)) issues.push('Invalid End Date');
+            if (!validTypes.includes(req.request_type)) issues.push('Invalid Type');
+            if (req.start_date > req.end_date && req.end_date !== '') { 
+                const temp = req.start_date; req.start_date = req.end_date; req.end_date = temp; issues.push('Dates Swapped'); 
+            }
+            
+            const isDupe = appData.requests.some(r => r.provider_id === req.provider_id && r.start_date === req.start_date && r.request_type === req.request_type);
+            if (isDupe) issues.push('Likely Duplicate');
+            
+            const isValid = issues.filter(i => i !== 'Likely Duplicate' && i !== 'Unknown Provider' && i !== 'Dates Swapped' && i !== 'Future Year Warning').length === 0;
+            return { normalized: req, issues, isValid, isDupe, isUnknown: issues.includes('Unknown Provider') };
+        }
+
+        function processAndOpenPreview(rawJsonString, method) {
+            try {
+                let cleanStr = rawJsonString.replace(/```json/gi, '').replace(/```/g, '').trim();
+                let parsed = JSON.parse(cleanStr);
+                if (!Array.isArray(parsed)) throw new Error("Parsed data is not an array");
+                
+                stagedImports = []; stagedImportMethod = method;
+                const tbody = document.querySelector('#import-preview-table tbody');
+                tbody.innerHTML = '';
+                
+                let validCount = 0, dupeCount = 0;
+
+                parsed.forEach((rawReq, idx) => {
+                    const { normalized, issues, isValid, isDupe, isUnknown } = validateImportRow(rawReq);
+                    stagedImports.push({ req: normalized, isValid, isDupe, isUnknown });
+                    
+                    if (isValid && !isDupe && !isUnknown) validCount++;
+                    if (isDupe) dupeCount++;
+                    
+                    const rowClass = !isValid ? 'background: var(--badge-red);' : (isDupe || isUnknown ? 'background: var(--badge-yellow);' : '');
+                    
+                    let provDisplay = escapeHtml(normalized.provider_id);
+                    if (isUnknown) {
+                        const opts = appData.providers.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+                        provDisplay = `<select class="map-provider-select" data-idx="${idx}"><option value="">-- Map Provider --</option>${opts}</select>`;
+                    } else { provDisplay = getProviderName(normalized.provider_id); }
+
+                    tbody.innerHTML += `
+                        <tr style="${rowClass}">
+                            <td>${!isValid ? 'Blocked' : (isDupe ? 'Skip' : (isUnknown ? 'Map Req' : 'OK'))}</td>
+                            <td>${provDisplay}</td>
+                            <td>${escapeHtml(normalized.start_date)}</td>
+                            <td>${escapeHtml(normalized.end_date)}</td>
+                            <td>${escapeHtml(normalized.request_type)}</td>
+                            <td style="max-width:150px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(normalized.notes)}<br><small style="color:var(--danger)">${issues.join(', ')}</small></td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('import-stats').textContent = `Found ${parsed.length} rows. ${validCount} ready. ${dupeCount} duplicates.`;
+                document.getElementById('import-source-label').value = `${method === 'api' ? 'Gemini Vision' : 'Manual Paste'} - ${new Date().toLocaleString()}`;
+                document.getElementById('import-modal').classList.remove('hidden');
+
+            } catch (e) {
+                document.getElementById('raw-error-text').value = rawJsonString;
+                document.getElementById('error-modal').classList.remove('hidden');
+            }
+        }
+
+        // Gemini API Pipeline
+        const resizeImage = (file, maxWidth = 1600) => new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(1, maxWidth / img.width);
+                canvas.width = img.width * scale; canvas.height = img.height * scale;
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+            };
+            img.src = URL.createObjectURL(file);
+        });
+
+        document.getElementById('btn-upload-images').addEventListener('click', () => document.getElementById('file-upload').click());
+        document.getElementById('file-upload').addEventListener('change', async (e) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            
+            let apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) {
+                apiKey = prompt("Enter Gemini API Key (get one free from Google AI Studio).");
+                if (!apiKey) return;
+                localStorage.setItem('gemini_api_key', apiKey);
+            }
+
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            try {
+                let parts = [{ "text": getDynamicPrompt() }];
+                for (let i = 0; i < files.length; i++) parts.push({ "inline_data": { "mime_type": "image/jpeg", "data": await resizeImage(files[i]) } });
+                
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "contents": [{ "parts": parts }], "generationConfig": { "temperature": 0.0 } })
+                });
+
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                if (!data.candidates || !data.candidates[0].content) throw new Error("Malformed API Response");
+                
+                processAndOpenPreview(data.candidates[0].content.parts[0].text, 'api');
+            } catch (err) {
+                alert("API Error: " + err.message);
+                if(err.message.includes('API key not valid')) localStorage.removeItem('gemini_api_key');
+            } finally {
+                document.getElementById('loading-overlay').classList.add('hidden');
+                e.target.value = '';
+            }
+        });
+
+        document.getElementById('btn-import-json').addEventListener('click', () => {
+            const raw = prompt("Paste JSON array:");
+            if (raw) processAndOpenPreview(raw, 'manual');
+        });
+
+        document.getElementById('btn-cancel-import').addEventListener('click', () => document.getElementById('import-modal').classList.add('hidden'));
+
+        document.getElementById('btn-confirm-import').addEventListener('click', () => {
+            const label = document.getElementById('import-source-label').value;
+            if (!label) return alert("Source Label required.");
+            const skipDupes = document.getElementById('import-skip-dupes').checked;
+            
+            document.querySelectorAll('.map-provider-select').forEach(sel => { if(sel.value) stagedImports[sel.dataset.idx].req.provider_id = sel.value; });
+
+            const sourceId = `src_${Date.now()}`;
+            const reqsToImport = stagedImports.map(s => {
+                const r = s.req;
+                if (!appData.providers.find(p=>p.id===r.provider_id) || !s.isValid || (skipDupes && s.isDupe)) return null; 
+                r.id = `req_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                r.source_id = sourceId; r.status = 'needs_review'; r.created_at = new Date().toISOString();
+                return r;
+            }).filter(Boolean);
+
+            if(reqsToImport.length > 0) {
+                appData.sources.push({ id: sourceId, label: label, import_method: stagedImportMethod, date_logged: new Date().toISOString().split('T')[0], status: "imported" });
+                appData.requests.push(...reqsToImport);
+                saveData(); showToast(`Imported ${reqsToImport.length} requests.`);
+            } else { showToast('Nothing imported.', 'error'); }
+            
+            document.getElementById('import-modal').classList.add('hidden');
+            document.querySelector('[data-target="view-master"]').click();
+        });
+
+        // --- Modals: Requests ---
         document.getElementById('btn-add-request').addEventListener('click', () => {
             document.getElementById('request-form').reset();
             document.getElementById('req-id').value = '';
             document.getElementById('req-source-id').value = 'src_manual';
-            reqModal.classList.remove('hidden');
+            document.getElementById('request-modal').classList.remove('hidden');
         });
 
         document.getElementById('request-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            const id = document.getElementById('req-id').value || `req_${Date.now()}`;
+            const start = document.getElementById('req-start').value;
+            const endRaw = document.getElementById('req-end').value;
+            const finalEnd = (endRaw && endRaw.trim() !== '') ? endRaw : start;
+
             const newReq = {
-                id: id,
+                id: document.getElementById('req-id').value || `req_${Date.now()}`,
                 provider_id: document.getElementById('req-provider').value,
                 source_id: document.getElementById('req-source-id').value,
-                start_date: document.getElementById('req-start').value,
-                end_date: document.getElementById('req-end').value,
+                start_date: start,
+                end_date: finalEnd,
                 request_type: document.getElementById('req-type').value,
                 request_strength: document.getElementById('req-strength').value,
                 status: document.getElementById('req-status').value,
                 notes: document.getElementById('req-notes').value,
                 updated_at: new Date().toISOString()
             };
-
-            const idx = appData.requests.findIndex(r => r.id === id);
-            if (idx >= 0) appData.requests[idx] = { ...appData.requests[idx], ...newReq };
-            else appData.requests.push(newReq);
-
-            saveData();
-            reqModal.classList.add('hidden');
+            const idx = appData.requests.findIndex(r => r.id === newReq.id);
+            if (idx >= 0) { appData.requests[idx] = newReq; showToast('Request updated'); } else { appData.requests.push(newReq); showToast('New request saved'); }
+            saveData(); document.getElementById('request-modal').classList.add('hidden');
         });
 
         window.editRequest = function(id) {
-            const req = appData.requests.find(r => r.id === id);
-            if (!req) return;
-            document.getElementById('req-id').value = req.id;
-            document.getElementById('req-source-id').value = req.source_id;
-            document.getElementById('req-provider').value = req.provider_id;
-            document.getElementById('req-start').value = req.start_date;
-            document.getElementById('req-end').value = req.end_date || req.start_date;
-            document.getElementById('req-type').value = req.request_type;
-            document.getElementById('req-strength').value = req.request_strength;
-            document.getElementById('req-status').value = req.status;
-            document.getElementById('req-notes').value = req.notes || '';
-            reqModal.classList.remove('hidden');
+            const r = appData.requests.find(x => x.id === id);
+            if (!r) return;
+            document.getElementById('req-id').value = r.id;
+            document.getElementById('req-source-id').value = r.source_id;
+            document.getElementById('req-provider').value = r.provider_id;
+            document.getElementById('req-start').value = r.start_date;
+            document.getElementById('req-end').value = r.end_date || r.start_date;
+            document.getElementById('req-type').value = r.request_type;
+            document.getElementById('req-strength').value = r.request_strength;
+            document.getElementById('req-status').value = r.status;
+            document.getElementById('req-notes').value = r.notes || '';
+            document.getElementById('request-modal').classList.remove('hidden');
         };
 
-        // True Wipe Data
+        window.deleteRequest = function(id) { if (confirm("Delete this request?")) { appData.requests = appData.requests.filter(r => r.id !== id); saveData(); showToast("Deleted", "error"); } };
+        document.getElementById('btn-cancel-req-modal').addEventListener('click', () => document.getElementById('request-modal').classList.add('hidden'));
+
+        // --- Phase 2: Providers ---
+        function renderProvidersTable() {
+            const tbody = document.querySelector('#providers-table tbody');
+            tbody.innerHTML = '';
+            appData.providers.forEach(p => {
+                tbody.innerHTML += `<tr><td style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(p.id)}</td><td><strong>${escapeHtml(p.name)}</strong></td><td><span style="text-transform:capitalize;">${escapeHtml(p.role || 'staff')}</span></td><td>${p.min_shifts||0}</td><td>${p.max_shifts||'N/A'}</td><td>${p.can_do_nights?'Y':'N'}</td><td><button class="btn sm danger outline" onclick="deleteProvider('${escapeHtml(p.id)}')">Del</button></td></tr>`;
+            });
+        }
+        
+        window.deleteProvider = function(id) {
+            if (appData.requests.some(r => r.provider_id === id)) return alert("Cannot delete provider with active requests.");
+            appData.providers = appData.providers.filter(p => p.id !== id); saveData(); renderProvidersTable();
+        };
+
+        document.getElementById('btn-save-provider').addEventListener('click', () => {
+            const name = document.getElementById('new-prov-name').value.trim();
+            if (!name) return;
+            const id = 'prov_' + name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (appData.providers.find(p => p.id === id)) return showToast('Exists!', 'error');
+            appData.providers.push({ id, name, role: document.getElementById('new-prov-role').value, can_do_nights: document.getElementById('new-prov-nights').checked, min_shifts: parseInt(document.getElementById('new-prov-min').value)||0, max_shifts: parseInt(document.getElementById('new-prov-max').value)||20 });
+            saveData(); renderProvidersTable(); document.getElementById('new-prov-name').value = ''; showToast('Added');
+        });
+
+        document.getElementById('btn-manage-providers').addEventListener('click', () => { renderProvidersTable(); document.getElementById('providers-modal').classList.remove('hidden'); });
+        document.getElementById('btn-close-providers-modal').addEventListener('click', () => document.getElementById('providers-modal').classList.add('hidden'));
+
+        // --- Settings & Export ---
+        document.getElementById('btn-set-api').addEventListener('click', () => { const k = prompt("Enter Gemini API Key:"); if(k) { localStorage.setItem('gemini_api_key', k); showToast('Key saved'); }});
+        document.getElementById('btn-clear-api').addEventListener('click', () => { localStorage.removeItem('gemini_api_key'); showToast('Key cleared', 'error'); });
+        
+        document.getElementById('btn-export-csv').addEventListener('click', () => {
+            let csv = "Provider,Start Date,End Date,Type,Strength,Status,Notes,Source\n";
+            appData.requests.forEach(r => csv += `"${getProviderName(r.provider_id)}",${r.start_date},${r.end_date?escapeHtml(r.end_date):''},${r.request_type},${r.request_strength},${r.status},"${escapeHtml(r.notes||'')}","${getSourceLabel(r.source_id)}"\n`);
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'})); a.download = `scheduler_requests.csv`; a.click(); showToast('CSV Downloaded');
+        });
+
+        document.getElementById('btn-export-json').addEventListener('click', () => {
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(appData, null, 2)], {type: 'application/json'})); a.download = `scheduler_backup.json`; a.click(); showToast('JSON Downloaded');
+        });
+
         document.getElementById('btn-reset-data').addEventListener('click', () => {
-            if(confirm('Are you sure you want to completely WIPE all requests and sources? Your provider list will be saved. This cannot be undone.')) {
-                appData.requests = [];
-                appData.sources = [];
-                
-                saveData();
-                
-                document.querySelector('[data-target="view-master"]').click();
-                alert("All requests and sources have been wiped. You have a clean slate.");
-            }
+            if(confirm('WIPE all requests and sources? Providers and Settings will be saved.')) { appData.requests = []; appData.sources = []; saveData(); document.querySelector('[data-target="view-master"]').click(); }
         });
 
         // Init
