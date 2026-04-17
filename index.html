@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scheduler Intake System V2</title>
+    <title>Scheduler Intake System V1.5</title>
     <style>
         :root {
             --bg-main: #f4f6f8; --bg-surface: #ffffff; --border: #e0e4e8;
@@ -301,17 +301,16 @@
             providers: [
                 { id: "prov_abui", name: "Alex Bui" },
                 { id: "prov_jfeldman", name: "Jason Feldman" },
-                { id: "prov_smith", name: "Sarah Smith" }
+                { id: "prov_smith", name: "Sarah Smith" },
+                { id: "prov_minzer", name: "Dr. Minzer" },
+                { id: "prov_anderson", name: "Dr. Anderson" },
+                { id: "prov_gentz", name: "Dr. Gentz" },
+                { id: "prov_bazzell", name: "Dr. Bazzell" },
+                { id: "prov_wetzel", name: "Dr. Wetzel" },
+                { id: "prov_quon", name: "Dr. Quon" }
             ],
-            sources: [
-                { id: "src_seed_1", label: "Initial Setup Seed", date_logged: "2026-04-17", status: "imported" }
-            ],
-            requests: [
-                { id: "req_001", provider_id: "prov_jfeldman", source_id: "src_seed_1", request_type: "off_request", request_strength: "hard", start_date: "2026-05-12", end_date: "2026-05-13", shift_type: null, location: null, notes: "Wedding", status: "active", created_at: "2026-04-17" },
-                { id: "req_002", provider_id: "prov_smith", source_id: "src_seed_1", request_type: "wants_shift", request_strength: "hard", start_date: "2026-05-12", end_date: "2026-05-12", shift_type: "Day", location: "Tucson", notes: "Needs extra shift", status: "active", created_at: "2026-04-17" },
-                // Intentional conflict seeded
-                { id: "req_003", provider_id: "prov_jfeldman", source_id: "src_seed_1", request_type: "wants_shift", request_strength: "hard", start_date: "2026-05-12", end_date: "2026-05-12", shift_type: null, location: null, notes: "Actually I can work the 12th", status: "needs_review", created_at: "2026-04-17" }
-            ]
+            sources: [],
+            requests: []
         };
 
         let appData = JSON.parse(localStorage.getItem('scheduler_v1_5')) || seedData;
@@ -394,7 +393,6 @@
             container.innerHTML = '';
             let conflicts = [];
 
-            // Group active requests by provider and start_date (simplified intersection check for Phase 1.5)
             const activeReqs = appData.requests.filter(r => r.status === 'active' || r.status === 'needs_review');
             const dateMap = {};
             
@@ -404,14 +402,12 @@
                 dateMap[key].push(req);
             });
 
-            // Logic 1: Missing critical data
             activeReqs.forEach(req => {
                 if (!appData.providers.find(p => p.id === req.provider_id)) {
                     conflicts.push(`<h4>Unmapped Provider</h4><p>Request ${req.id} points to unknown provider: ${req.provider_id}.</p>`);
                 }
             });
 
-            // Logic 2: Contradictions on same day
             for (const [key, reqs] of Object.entries(dateMap)) {
                 if (reqs.length > 1) {
                     const hasOff = reqs.some(r => r.request_type === 'off_request');
@@ -452,9 +448,8 @@
                 tbody.innerHTML = '';
                 
                 stagedImports.forEach((req, idx) => {
-                    // Normalize dates
                     req.start_date = req.start_date || "Missing";
-                    req.end_date = req.end_date || req.start_date; // Auto-fill end date if missing
+                    req.end_date = req.end_date || req.start_date; 
                     
                     let warnings = [];
                     if (!appData.providers.find(p => p.id === req.provider_id)) warnings.push("Unknown Provider");
@@ -484,7 +479,6 @@
             const label = document.getElementById('import-source-label').value;
             if (!label) return alert("You must provide a source label.");
 
-            // 1. Create the source record
             const sourceId = `src_${Date.now()}`;
             appData.sources.push({
                 id: sourceId,
@@ -493,7 +487,6 @@
                 status: "imported"
             });
 
-            // 2. Commit the requests
             stagedImports.forEach(req => {
                 req.id = req.id && !appData.requests.find(r=>r.id===req.id) ? req.id : `req_${Date.now()}_${Math.random()}`;
                 req.source_id = sourceId;
@@ -505,7 +498,7 @@
             stagedImports = [];
             saveData();
             document.getElementById('import-modal').classList.add('hidden');
-            document.querySelector('[data-target="view-master"]').click(); // Jump to master table
+            document.querySelector('[data-target="view-master"]').click();
         });
 
         // --- UI Interactions & Boilerplate ---
@@ -528,9 +521,12 @@
             const currProvFilter = document.getElementById('filter-provider').value;
             document.getElementById('filter-provider').innerHTML = `<option value="all">All Providers</option>` + options;
             document.getElementById('filter-provider').value = currProvFilter;
+
+            const currCalFilter = document.getElementById('cal-filter-provider').value;
+            document.getElementById('cal-filter-provider').innerHTML = `<option value="all">All Providers</option>` + options;
+            document.getElementById('cal-filter-provider').value = currCalFilter;
         }
 
-        // Summary and Calendar boilerplate skipped for brevity but functions identically to V1 just pulling from richer dataset.
         function renderSummary() {
             const tbody = document.querySelector('#summary-table tbody');
             tbody.innerHTML = '';
@@ -547,7 +543,60 @@
                 </tr>`;
             });
         }
-        function renderCalendar() {} // Render logic remains same as V1, omitted here to save token space, implementation is trivial.
+        
+        function renderCalendar() {
+            const grid = document.querySelector('.calendar-grid');
+            const monthLabel = document.getElementById('cal-month-label');
+            const filterProv = document.getElementById('cal-filter-provider').value;
+            
+            const headers = Array.from(grid.querySelectorAll('.cal-header'));
+            grid.innerHTML = '';
+            headers.forEach(h => grid.appendChild(h));
+
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            monthLabel.textContent = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="cal-day"></div>`;
+            }
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                
+                const dayReqs = appData.requests.filter(r => {
+                    const matchProv = filterProv === 'all' || r.provider_id === filterProv;
+                    const inRange = r.start_date <= dateStr && (r.end_date || r.start_date) >= dateStr;
+                    return matchProv && inRange;
+                });
+                
+                let reqHTML = dayReqs.map(r => 
+                    `<div class="cal-req type-${r.request_type}" onclick="editRequest('${r.id}')" title="${r.notes || ''}">
+                        ${getProviderName(r.provider_id).split(' ')[0]} ${r.request_strength === 'hard' ? '(H)' : ''}
+                    </div>`
+                ).join('');
+
+                grid.innerHTML += `
+                    <div class="cal-day">
+                        <div class="date-num">${i}</div>
+                        ${reqHTML}
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('cal-prev').addEventListener('click', () => {
+            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            renderCalendar();
+        });
+        document.getElementById('cal-next').addEventListener('click', () => {
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            renderCalendar();
+        });
+        document.getElementById('cal-filter-provider').addEventListener('change', renderCalendar);
 
         // Modal Form Handling
         const reqModal = document.getElementById('request-modal');
@@ -597,11 +646,16 @@
             reqModal.classList.remove('hidden');
         };
 
-        // Wipe Data
+        // True Wipe Data
         document.getElementById('btn-reset-data').addEventListener('click', () => {
-            if(confirm('Wipe ALL data and reset to seed state?')) {
-                appData = JSON.parse(JSON.stringify(seedData));
+            if(confirm('Are you sure you want to completely WIPE all requests and sources? Your provider list will be saved. This cannot be undone.')) {
+                appData.requests = [];
+                appData.sources = [];
+                
                 saveData();
+                
+                document.querySelector('[data-target="view-master"]').click();
+                alert("All requests and sources have been wiped. You have a clean slate.");
             }
         });
 
@@ -610,4 +664,3 @@
     </script>
 </body>
 </html>
-
