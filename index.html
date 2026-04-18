@@ -3,236 +3,518 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scheduler Intake System v3.1</title>
+  <title>Scheduler Intake System v3.3</title>
   <style>
     :root {
-      --bg-main: #f4f6f8; --bg-surface: #ffffff; --border: #e0e4e8;
-      --text-main: #1a1f24; --text-muted: #637381;
-      --primary: #0052cc; --primary-hover: #0043a6; --danger: #de350b;
-      --warning: #ffab00; --success: #00875a;
-      --badge-yellow: #fffae6; --badge-red: #ffebe6;
-      --badge-green: #e3fcef; --badge-gray: #f4f5f7;
+      --bg-main: #f4f6f8;
+      --bg-surface: #ffffff;
+      --border: #e0e4e8;
+      --text-main: #1a1f24;
+      --text-muted: #637381;
+      --primary: #0052cc;
+      --primary-hover: #0043a6;
+      --danger: #de350b;
+      --warning: #ffab00;
+      --success: #00875a;
+      --badge-yellow: #fffae6;
+      --badge-red: #ffebe6;
+      --badge-green: #e3fcef;
+      --badge-gray: #f4f5f7;
       --shadow: 0 8px 24px rgba(0,0,0,0.16);
     }
 
     body.dark-mode {
-      --bg-main: #0d1117; --bg-surface: #161b22; --border: #30363d;
-      --text-main: #c9d1d9; --text-muted: #8b949e;
-      --badge-yellow: #4d3c00; --badge-red: #4a0f00;
-      --badge-green: #003d29; --badge-gray: #21262d;
+      --bg-main: #0d1117;
+      --bg-surface: #161b22;
+      --border: #30363d;
+      --text-main: #c9d1d9;
+      --text-muted: #8b949e;
+      --badge-yellow: #4d3c00;
+      --badge-red: #4a0f00;
+      --badge-green: #003d29;
+      --badge-gray: #21262d;
+      --shadow: 0 10px 28px rgba(0,0,0,0.4);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
-    body { display: flex; height: 100vh; background: var(--bg-main); color: var(--text-main); transition: background .2s; }
+    html, body { height: 100%; }
+    body { display: flex; background: var(--bg-main); color: var(--text-main); transition: background .2s, color .2s; }
     .hidden { display: none !important; }
 
-    .sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-    .logo { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin-bottom: 10px; }
-    
-    .nav-links { list-style: none; display: grid; gap: 4px; flex-grow: 1; }
-    .nav-links a { display: block; text-decoration: none; color: var(--text-muted); padding: 10px 12px; border-radius: 8px; font-weight: 600; }
+    /* Sidebar Styles */
+    .sidebar {
+      width: 260px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .logo { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+    .legend {
+      font-size: 0.78rem;
+      padding: 10px;
+      background: var(--bg-main);
+      border-radius: 8px;
+      display: grid;
+      gap: 6px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+    .dot { width: 10px; height: 10px; border-radius: 999px; }
+
+    .nav-links { list-style: none; display: grid; gap: 4px; }
+    .nav-links a {
+      display: block;
+      text-decoration: none;
+      color: var(--text-muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
     .nav-links a:hover, .nav-links a.active { background: var(--bg-main); color: var(--primary); }
 
-    .content { flex: 1; overflow-y: auto; padding: 28px; position: relative; }
-    .view-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
+    .nav-actions { margin-top: auto; display: grid; gap: 10px; }
 
-    .btn { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-main); cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+    /* Content Area Styles */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+      position: relative;
+    }
+
+    .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:hover { background: var(--bg-main); }
     .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn.primary:hover { background: var(--primary-hover); }
+    .btn.outline { background: transparent; }
     .btn.danger { color: var(--danger); border-color: var(--danger); }
     .btn.sm { padding: 5px 9px; font-size: 0.82rem; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-    .table-container { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; overflow: auto; }
+    /* Filter Bar Styles */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: var(--bg-surface);
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; min-width: 130px; flex: 1; }
+    .filter-group.search-box { flex: 2; min-width: 220px; }
+    .filter-group label { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .filter-group input, .filter-group select, .form-group input, .form-group select, .form-group textarea {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      color: var(--text-main);
+    }
+    .form-group textarea { min-height: 90px; resize: vertical; }
+
+    /* Table Styles */
+    .table-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: auto;
+    }
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left; }
-    th { background: var(--bg-main); color: var(--text-muted); font-size: 0.82rem; text-transform: uppercase; position: sticky; top: 0; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: var(--bg-main); color: var(--text-muted); font-size: 0.82rem; text-transform: uppercase; position: sticky; top: 0; z-index: 1; }
+    td { font-size: 0.92rem; }
 
-    .badge { padding: 4px 8px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; }
+    /* Badge & Color Logic */
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
     .status-active { background: var(--badge-green); color: var(--success); }
     .status-review { background: var(--badge-yellow); color: #a06a00; }
+    .status-resolved { background: var(--badge-gray); color: #42526e; }
+    body.dark-mode .status-resolved { color: #c9d1d9; }
 
-    /* Calendar */
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-    .cal-header { background: var(--bg-main); padding: 10px; text-align: center; font-weight: 700; }
-    .cal-day { background: var(--bg-surface); min-height: 100px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .color-green { background: #e3fcef; color: #006644; border-left-color: #00875a; }
+    .color-yellow { background: var(--badge-yellow); color: #a06a00; border-left-color: #ffab00; }
+    .color-red { background: var(--badge-red); color: #bf2600; border-left-color: #de350b; }
+    .color-orange { background: #fff4e5; color: #d97706; border-left-color: #d97706; }
+    .color-gray { background: var(--badge-gray); color: #42526e; border-left-color: #a5adba; }
+
+    /* Calendar Styles */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .cal-header { background: var(--bg-main); padding: 10px; text-align: center; font-weight: 700; color: var(--text-muted); }
+    .cal-day { background: var(--bg-surface); min-height: 108px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .cal-day.empty { background: var(--bg-main); }
     .date-num { font-size: 0.84rem; color: var(--text-muted); text-align: right; }
-    .cal-req { font-size: 0.72rem; padding: 3px 5px; border-radius: 4px; border-left: 3px solid; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-req { font-size: 0.74rem; padding: 4px 6px; border-radius: 4px; border-left: 3px solid; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .modal-content { background: var(--bg-surface); width: min(96vw, 600px); max-height: 90vh; overflow-y: auto; border-radius: 12px; padding: 22px; }
-    .modal-content.large { width: min(96vw, 1000px); }
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.58);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-content {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      width: min(96vw, 560px);
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+    .modal-content.large { width: min(96vw, 980px); }
 
-    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 3000; display: grid; gap: 10px; }
-    .toast { background: var(--bg-surface); border-left: 4px solid var(--primary); padding: 12px 16px; border-radius: 8px; box-shadow: var(--shadow); font-weight: 700; }
-    
-    #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
-    .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    /* Utility Styles */
+    #toast-container { position: fixed; bottom: 18px; right: 18px; z-index: 3000; display: grid; gap: 10px; pointer-events: none; }
+    .toast { background: var(--bg-surface); border-left: 4px solid var(--primary); border-radius: 8px; padding: 12px 14px; box-shadow: var(--shadow); min-width: 220px; font-weight: 700; animation: slideIn .2s ease-out; }
+    @keyframes slideIn { from { transform: translateX(14px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,.82); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
+    .spinner { width: 42px; height: 42px; border: 4px solid rgba(0,0,0,.1); border-top: 4px solid var(--primary); border-radius: 999px; animation: spin 1s linear infinite; margin-bottom: 14px; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .muted { color: var(--text-muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   </style>
 </head>
 <body>
   <nav class="sidebar">
-    <div class="logo">Scheduler Intake v3.1</div>
+    <div class="logo">Scheduler Intake v3.3</div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="dot" style="background:#00875a"></span> Hard Shift</div>
+      <div class="legend-item"><span class="dot" style="background:#ffab00"></span> Soft Shift</div>
+      <div class="legend-item"><span class="dot" style="background:#de350b"></span> Hard Off</div>
+      <div class="legend-item"><span class="dot" style="background:#d97706"></span> Soft Off</div>
+    </div>
+
     <ul class="nav-links">
       <li><a href="#" data-nav="view-intake">1. Intake / Sources</a></li>
       <li><a href="#" data-nav="view-master" class="active">2. Master Requests</a></li>
-      <li><a href="#" data-nav="view-conflicts">3. Conflicts <span id="nav-conflict-count" class="badge hidden" style="background:red;color:white;">0</span></a></li>
+      <li><a href="#" data-nav="view-conflicts">3. Conflicts & Review <span id="nav-conflict-count" class="badge hidden" style="background:var(--danger);color:white;">0</span></a></li>
       <li><a href="#" data-nav="view-calendar">4. Calendar</a></li>
-      <li><a href="#" data-nav="view-summary">5. Summary</a></li>
-      <li><a href="#" data-nav="view-export">6. Settings</a></li>
+      <li><a href="#" data-nav="view-summary">5. Provider Summary</a></li>
+      <li><a href="#" data-nav="view-phase2">6. Phase 2 Constraints</a></li>
+      <li><a href="#" data-nav="view-export">7. Settings & Export</a></li>
     </ul>
+
     <div class="nav-actions">
       <input type="file" id="file-upload" class="hidden" multiple accept="image/*">
       <button class="btn primary" id="btn-upload-images">📷 Upload Screenshots</button>
-      <button class="btn" id="btn-manage-providers">Manage Providers</button>
-      <button class="btn sm" id="btn-toggle-dark">🌙 Dark Mode</button>
+      <button class="btn" id="btn-add-request">+ Manual Request</button>
+      <button class="btn outline" id="btn-manage-providers">Manage Providers</button>
+      <button class="btn sm" id="btn-toggle-dark">🌙 Toggle Dark Mode</button>
     </div>
   </nav>
 
   <main class="content">
     <div id="toast-container"></div>
-    <div id="loading-overlay" class="hidden"><div class="spinner"></div><h3 id="loading-text" style="margin-top:10px;">Gemini is working...</h3></div>
+    <div id="loading-overlay" class="hidden">
+      <div class="spinner"></div>
+      <h3 id="loading-text">Parsing screenshots with Gemini…</h3>
+    </div>
+
+    <section id="view-intake" class="view hidden">
+      <div class="view-header">
+        <div><h2>Source Tracking</h2><p class="muted">Trace batches back to source labels.</p></div>
+        <button class="btn sm outline" id="btn-import-json">Paste JSON Fallback</button>
+      </div>
+      <div class="table-container"><table id="sources-table"><thead><tr><th>ID</th><th>Source Label</th><th>Method</th><th>Model</th><th>Date</th><th>Count</th></tr></thead><tbody></tbody></table></div>
+    </section>
 
     <section id="view-master" class="view">
-      <div class="view-header"><h2>Master Request Table</h2><button class="btn sm primary" id="btn-add-request">+ New</button></div>
-      <div class="table-container"><table id="master-table"><thead><tr><th>Provider</th><th>Start</th><th>End</th><th>Type</th><th>Notes</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="view-header"><div><h2>Master Request Table</h2><p class="muted">All received requests in one system.</p></div></div>
+      <div class="filter-bar">
+        <div class="filter-group search-box"><label>Search</label><input type="text" id="filter-search" placeholder="Search provider, notes…"></div>
+        <div class="filter-group"><label>Date Range</label><select id="filter-date-range"><option value="all">All Time</option><option value="next_30">Next 30 Days</option><option value="this_month">This Month</option></select></div>
+        <div class="filter-group"><label>Provider</label><select id="filter-provider"><option value="all">All Providers</option></select></div>
+        <div class="filter-group"><label>Type</label><select id="filter-type"><option value="all">All Types</option><option value="off_request">Off Request</option><option value="wants_shift">Wants Shift</option><option value="call_request">Call Request</option><option value="no_call">No Call</option><option value="info">Info</option></select></div>
+        <div class="filter-group"><label>Status</label><select id="filter-status"><option value="all">All</option><option value="active" selected>Active</option><option value="needs_review">Needs Review</option><option value="resolved">Resolved</option></select></div>
+      </div>
+      <div class="table-container"><table id="master-table"><thead><tr><th>Provider</th><th>Start</th><th>End</th><th>Type / Strength</th><th>Notes</th><th>Source</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section id="view-conflicts" class="view hidden">
+      <div class="view-header"><div><h2>Conflicts & Data Review</h2><p class="muted">Flags collisions and contradictions.</p></div><button class="btn outline" id="btn-mark-all-active">Mark All As Active</button></div>
+      <div id="conflicts-container"></div>
     </section>
 
     <section id="view-calendar" class="view hidden">
-      <div class="view-header">
-        <h2 id="cal-month-label">Month</h2>
-        <div><button class="btn" id="cal-prev">&larr;</button><button class="btn" id="cal-next">&rarr;</button></div>
-      </div>
+      <div class="view-header"><div><h2>Calendar View</h2></div><div style="display:flex; gap:12px; align-items:center;"><select id="cal-filter-provider"><option value="all">All Providers</option></select><button class="btn" id="cal-prev">&larr;</button><h3 id="cal-month-label" style="min-width:180px; text-align:center;">Month Year</h3><button class="btn" id="cal-next">&rarr;</button></div></div>
       <div id="calendar-grid" class="calendar-grid"></div>
     </section>
 
-    <section id="view-intake" class="view hidden"><h2>Sources</h2><div class="table-container"><table id="sources-table"><thead><tr><th>ID</th><th>Label</th><th>Method</th><th>Reqs</th></tr></thead><tbody></tbody></table></div></section>
-    <section id="view-conflicts" class="view hidden"><h2>Conflicts</h2><div id="conflicts-container"></div></section>
-    <section id="view-summary" class="view hidden"><h2>Provider Summary</h2><div class="table-container"><table id="summary-table"><thead><tr><th>Provider</th><th>Total</th><th>Off</th><th>Wants</th></tr></thead><tbody></tbody></table></div></section>
+    <section id="view-summary" class="view hidden">
+      <div class="view-header"><div><h2>Provider Summary</h2></div></div>
+      <div class="table-container"><table id="summary-table"><thead><tr><th>Provider</th><th>Total</th><th>Hard Off</th><th>Soft Off</th><th>Wants</th><th>Call</th><th>Review</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section id="view-phase2" class="view hidden">
+      <div class="view-header"><div><h2>Phase 2 Constraints Preview</h2></div></div>
+      <div class="table-container"><table id="phase2-table"><thead><tr><th>Provider</th><th>Role</th><th>Min</th><th>Max</th><th>Requested</th><th>Nights</th><th>Peds</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
     <section id="view-export" class="view hidden">
-      <h2>Settings</h2>
-      <button class="btn outline" id="btn-set-api">Set API Key</button>
-      <button class="btn danger outline" id="btn-reset-data">Wipe All Data</button>
+      <div class="view-header"><div><h2>Settings & Export</h2></div></div>
+      <div style="display:grid; gap:20px; max-width:760px;">
+        <div class="summary-card"><h3>Data Export</h3><div class="pill-list" style="margin-top:10px;"><button class="btn primary" id="btn-export-csv">CSV</button><button class="btn outline" id="btn-export-json">JSON</button></div></div>
+        <div class="summary-card"><h3>Gemini API</h3><div class="pill-list" style="margin-top:10px;"><button class="btn outline" id="btn-set-api">Update Key</button><button class="btn danger" id="btn-clear-api">Clear Key</button></div><p class="muted mono" id="api-key-status" style="margin-top:12px;"></p></div>
+        <div class="summary-card" style="border-color:var(--danger);"><button class="btn danger" id="btn-reset-data">Wipe All Requests & Sources</button></div>
+      </div>
     </section>
   </main>
 
-  <div id="import-modal" class="modal hidden">
-    <div class="modal-content large">
-      <h3>Verify Gemini Import</h3>
-      <input type="text" id="import-source-label" style="width:100%; padding:10px; margin:10px 0;" placeholder="Source Label (e.g. Dr. Wetzel texts)">
-      <div class="table-container" style="max-height:400px;"><table id="import-preview-table"><thead><tr><th>Status</th><th>Provider</th><th>Start</th><th>End</th><th>Type</th><th>Notes</th></tr></thead><tbody></tbody></table></div>
-      <div class="modal-actions"><button class="btn" id="btn-cancel-import">Cancel</button><button class="btn primary" id="btn-confirm-import">Confirm Import</button></div>
-    </div>
-  </div>
+  <div id="import-modal" class="modal hidden"><div class="modal-content large"><h3>Verify Import</h3><input type="text" id="import-source-label" placeholder="Source Label"><div id="import-stats" class="muted" style="margin:8px 0;"></div><div class="table-container" style="max-height:420px;"><table id="import-preview-table"><thead><tr><th>Status</th><th>Provider</th><th>Start</th><th>End</th><th>Type</th><th>Notes</th></tr></thead><tbody></tbody></table></div><div class="modal-actions"><button class="btn" id="btn-cancel-import">Cancel</button><button class="btn primary" id="btn-confirm-import">Confirm Import</button></div></div></div>
+  <div id="request-modal" class="modal hidden"><div class="modal-content"><h3 id="request-modal-title">Edit Request</h3><form id="request-form"><input type="hidden" id="req-id"><div class="form-group"><label>Provider</label><select id="req-provider" required></select></div><div style="display:flex; gap:10px;"><input type="date" id="req-start" required><input type="date" id="req-end"></div><div style="display:flex; gap:10px;"><select id="req-type"><option value="off_request">Off</option><option value="wants_shift">Wants</option><option value="call_request">Call</option></select><select id="req-strength"><option value="hard">Hard</option><option value="soft">Soft</option></select></div><textarea id="req-notes" placeholder="Notes"></textarea><div class="modal-actions"><button type="button" class="btn" id="btn-cancel-request">Cancel</button><button type="submit" class="btn primary">Save</button></div></form></div></div>
+  <div id="providers-modal" class="modal hidden"><div class="modal-content large"><h3>Manage Providers</h3><div class="table-container" style="max-height:280px;"><table id="providers-table"><thead><tr><th>ID</th><th>Name</th><th>Min</th><th>Max</th><th>Nights</th><th>Peds</th><th>Action</th></tr></thead><tbody></tbody></table></div><div style="display:flex; gap:10px; align-items:flex-end;"><input type="text" id="new-prov-name" placeholder="Name"><button class="btn primary" id="btn-save-provider">Add</button></div><div class="modal-actions"><button class="btn" id="btn-close-providers">Done</button></div></div></div>
 
   <script>
-    const STORAGE_KEY = 'scheduler_v3_1';
-    const API_KEY_KEY = 'gemini_api_key';
-    // CURRENT MODELS FOR 2026
+    // --- State & Core Setup ---
+    const STORAGE_KEY = 'scheduler_v3_3_stable';
+    const THEME_KEY = 'scheduler_v3_theme';
+    const API_KEY_KEY = 'gemini_api_key_v3';
     const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'];
 
-    let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { providers: [ {id:'prov_abui', name:'Alex Bui'}, {id:'prov_jfeldman', name:'Jason Feldman'} ], sources: [], requests: [] };
+    let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+      providers: [
+        { id: 'prov_abui', name: 'Alex Bui', role: 'partner', can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15 },
+        { id: 'prov_jfeldman', name: 'Jason Feldman', role: 'partner', can_do_nights: true, can_do_peds: false, min_shifts: 8, max_shifts: 12 }
+      ],
+      sources: [],
+      requests: []
+    };
+    
     let stagedImports = [];
     let currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); renderAll(); }
-    function escapeHtml(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    const save = () => { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); renderAll(); };
+    const escape = (s) => s ? String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
 
-    function showView(id) {
-      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-      document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-      document.getElementById(id).classList.remove('hidden');
-      document.querySelector(`[data-nav="${id}"]`).classList.add('active');
-      if(id === 'view-calendar') renderCalendar();
-    }
-
-    function renderMasterTable() {
-      const tbody = document.querySelector('#master-table tbody');
-      tbody.innerHTML = appData.requests.map(r => `
-        <tr>
-          <td>${escapeHtml(appData.providers.find(p=>p.id===r.provider_id)?.name || 'Unknown')}</td>
-          <td>${r.start_date}</td><td>${r.end_date}</td>
-          <td><span class="badge ${r.request_type === 'off_request' ? 'status-review' : 'status-active'}">${r.request_type}</span></td>
-          <td>${escapeHtml(r.notes)}</td><td>${r.status}</td>
-          <td><button class="btn sm danger" onclick="deleteRequest('${r.id}')">Del</button></td>
-        </tr>`).join('');
-    }
-
-    function renderCalendar() {
-      const grid = document.getElementById('calendar-grid');
-      const label = document.getElementById('cal-month-label');
-      label.textContent = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
-      grid.innerHTML = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-header">${d}</div>`).join('');
+    // --- Conflict Logic ---
+    const computeConflicts = (reqs) => {
+      const active = reqs.filter(r => r.status !== 'resolved');
+      const conflicts = [];
+      const byProv = {};
+      active.forEach(r => { if(!byProv[r.provider_id]) byProv[r.provider_id] = []; byProv[r.provider_id].push(r); });
       
-      const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
-      const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+      Object.keys(byProv).forEach(pid => {
+        const pReqs = byProv[pid];
+        for(let i=0; i<pReqs.length; i++) {
+          for(let j=i+1; j<pReqs.length; j++) {
+            const a = pReqs[i], b = pReqs[j];
+            const aE = a.end_date || a.start_date, bE = b.end_date || b.start_date;
+            if(a.start_date <= bE && b.start_date <= aE) {
+              conflicts.push({ type: 'overlap', providerId: pid, requestIds: [a.id, b.id], message: `Overlap: ${a.start_date} to ${aE}` });
+            }
+          }
+        }
+      });
+      return conflicts;
+    };
 
-      for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day" style="background:#eee"></div>`;
-      for(let d=1; d<=daysInMonth; d++) {
-        const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const reqs = appData.requests.filter(r => r.start_date <= dateStr && r.end_date >= dateStr);
-        const html = reqs.map(r => `<div class="cal-req" style="background:${r.request_type==='off_request'?'#ffebe6':'#e3fcef'}; border-left-color:${r.request_type==='off_request'?'red':'green'}">${escapeHtml(appData.providers.find(p=>p.id===r.provider_id)?.name.split(' ')[0])}</div>`).join('');
+    // --- Rendering Functions ---
+    const renderAll = () => {
+      populateSelects();
+      renderMaster();
+      renderCalendar();
+      renderSummary();
+      renderPhase2();
+      renderConflicts();
+      renderSources();
+    };
+
+    const populateSelects = () => {
+      const opts = appData.providers.map(p => `<option value="${p.id}">${escape(p.name)}</option>`).join('');
+      ['req-provider', 'filter-provider', 'cal-filter-provider'].forEach(id => {
+        const el = document.getElementById(id);
+        const val = el.value;
+        el.innerHTML = (id.includes('filter') ? '<option value="all">All Providers</option>' : '') + opts;
+        el.value = val || (id.includes('filter') ? 'all' : el.value);
+      });
+    };
+
+    const renderMaster = () => {
+      const tbody = document.querySelector('#master-table tbody');
+      const filtered = appData.requests.filter(r => {
+        const pF = document.getElementById('filter-provider').value;
+        const sF = document.getElementById('filter-status').value;
+        const search = document.getElementById('filter-search').value.toLowerCase();
+        return (pF === 'all' || r.provider_id === pF) && (sF === 'all' || r.status === sF) && 
+               (!search || escape(appData.providers.find(p=>p.id===r.provider_id)?.name || '').toLowerCase().includes(search));
+      });
+      tbody.innerHTML = filtered.map(r => `
+        <tr>
+          <td>${escape(appData.providers.find(p=>p.id===r.provider_id)?.name || r.provider_id)}</td>
+          <td>${r.start_date}</td><td>${r.end_date}</td>
+          <td><span class="badge ${getColorClass(r.request_type, r.request_strength)}">${r.request_type}</span></td>
+          <td>${escape(r.notes)}</td><td>${getSourceLabel(r.source_id)}</td>
+          <td><span class="badge ${r.status==='active'?'status-active':'status-review'}">${r.status}</span></td>
+          <td><button class="btn sm" onclick="editRequest('${r.id}')">Edit</button></td>
+        </tr>
+      `).join('');
+    };
+
+    const renderCalendar = () => {
+      const grid = document.getElementById('calendar-grid');
+      document.getElementById('cal-month-label').textContent = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+      grid.innerHTML = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-header">${d}</div>`).join('');
+      const first = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+      const days = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+      for(let i=0; i<first; i++) grid.innerHTML += '<div class="cal-day empty"></div>';
+      for(let d=1; d<=days; d++) {
+        const dStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const reqs = appData.requests.filter(r => r.start_date <= dStr && (r.end_date || r.start_date) >= dStr && r.status !== 'resolved');
+        const html = reqs.map(r => `<div class="cal-req ${getColorClass(r.request_type, r.request_strength)}" onclick="editRequest('${r.id}')">${escape(appData.providers.find(p=>p.id===r.provider_id)?.name.split(' ')[0])}</div>`).join('');
         grid.innerHTML += `<div class="cal-day"><div class="date-num">${d}</div>${html}</div>`;
       }
-    }
+    };
 
-    async function callGemini(apiKey, parts) {
-      for (const model of GEMINI_MODELS) {
+    // --- Helper Functions ---
+    const getSourceLabel = (id) => appData.sources.find(s => s.id === id)?.label || 'Manual';
+    const getColorClass = (t, s) => {
+      if(t==='wants_shift') return s==='hard'?'color-green':'color-yellow';
+      if(t==='off_request') return s==='hard'?'color-red':'color-orange';
+      return 'color-gray';
+    };
+
+    // --- Navigation & Routing ---
+    const showView = (id) => {
+      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+      document.querySelectorAll('[data-nav]').forEach(a => a.classList.remove('active'));
+      document.getElementById(id).classList.remove('hidden');
+      document.querySelector(`[data-nav="${id}"]`).classList.add('active');
+    };
+
+    // --- Gemini API & Upload ---
+    async function callGemini(key, parts) {
+      for (const m of GEMINI_MODELS) {
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0.0 } })
           });
           const data = await res.json();
-          if (res.ok && !data.error) return data.candidates[0].content.parts[0].text;
-        } catch (e) { console.warn(`Model ${model} failed`); }
+          if(res.ok && data.candidates) return { text: data.candidates[0].content.parts[0].text, model: m };
+        } catch(e) {}
       }
-      throw new Error("All Gemini models failed. Check your API key or internet.");
+      throw new Error("All models failed. Try a Hard Refresh on iPad.");
     }
 
-    document.getElementById('btn-upload-images').addEventListener('click', () => document.getElementById('file-upload').click());
-    document.getElementById('file-upload').addEventListener('change', async (e) => {
+    document.getElementById('btn-upload-images').onclick = () => document.getElementById('file-upload').click();
+    document.getElementById('file-upload').onchange = async (e) => {
       const files = Array.from(e.target.files);
-      const apiKey = localStorage.getItem(API_KEY_KEY);
-      if(!apiKey) return alert("Set your API Key in Settings first.");
-      
+      const key = localStorage.getItem(API_KEY_KEY);
+      if(!key) return alert("Set API key in Settings first.");
       document.getElementById('loading-overlay').classList.remove('hidden');
       try {
-        const prompt = `You are an anesthesia scheduler. Extract requests from screenshots. Roster: ${JSON.stringify(appData.providers)}. Return ONLY JSON array: [{"provider_id":"", "request_type":"off_request|wants_shift", "start_date":"YYYY-MM-DD", "end_date":"YYYY-MM-DD", "notes":""}]`;
+        const prompt = `Extract anesthesia scheduler requests as JSON array: [{"provider_id":"", "request_type":"off_request|wants_shift", "request_strength":"hard|soft", "start_date":"YYYY-MM-DD", "end_date":"YYYY-MM-DD", "notes":""}]. Roster: ${JSON.stringify(appData.providers)}`;
         const parts = [{ text: prompt }];
-        for (const f of files) {
-            const base64 = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result.split(',')[1]); reader.readAsDataURL(f); });
-            parts.push({ inline_data: { mime_type: "image/jpeg", data: base64 } });
+        for(const f of files) {
+          const b64 = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result.split(',')[1]); reader.readAsDataURL(f); });
+          parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
         }
-        const text = await callGemini(apiKey, parts);
-        stagedImports = JSON.parse(text.replace(/```json/g, '').replace(/```/g, ''));
-        renderImportPreview();
+        const result = await callGemini(key, parts);
+        stagedImports = JSON.parse(result.text.replace(/```json/g, '').replace(/```/g, ''));
         document.getElementById('import-modal').classList.remove('hidden');
-      } catch (err) { alert(err.message); }
-      finally { document.getElementById('loading-overlay').classList.add('hidden'); }
-    });
+        document.querySelector('#import-preview-table tbody').innerHTML = stagedImports.map(r => `<tr><td>OK</td><td>${r.provider_id}</td><td>${r.start_date}</td><td>${r.end_date}</td><td>${r.request_type}</td><td>${escape(r.notes)}</td></tr>`).join('');
+      } catch(err) { alert(err.message); }
+      finally { document.getElementById('loading-overlay').classList.add('hidden'); e.target.value=''; }
+    };
 
-    function renderImportPreview() {
-      const tbody = document.querySelector('#import-preview-table tbody');
-      tbody.innerHTML = stagedImports.map(r => `<tr><td>OK</td><td>${escapeHtml(r.provider_id)}</td><td>${r.start_date}</td><td>${r.end_date}</td><td>${r.request_type}</td><td>${escapeHtml(r.notes)}</td></tr>`).join('');
-    }
-
-    document.getElementById('btn-confirm-import').addEventListener('click', () => {
-      const sourceId = 'src_' + Date.now();
-      appData.sources.push({ id: sourceId, label: document.getElementById('import-source-label').value });
-      stagedImports.forEach(r => { r.id = 'req_'+Math.random(); r.source_id = sourceId; r.status = 'active'; appData.requests.push(r); });
-      saveData(); document.getElementById('import-modal').classList.add('hidden');
-    });
-
-    function renderAll() { renderMasterTable(); renderCalendar(); }
-    document.querySelectorAll('[data-nav]').forEach(a => a.addEventListener('click', e => showView(e.target.dataset.nav)));
-    document.getElementById('cal-prev').addEventListener('click', () => { currentMonth.setMonth(currentMonth.getMonth()-1); renderCalendar(); });
-    document.getElementById('cal-next').addEventListener('click', () => { currentMonth.setMonth(currentMonth.getMonth()+1); renderCalendar(); });
-    document.getElementById('btn-set-api').addEventListener('click', () => { const k = prompt("API Key:"); if(k) localStorage.setItem(API_KEY_KEY, k); });
-    document.getElementById('btn-reset-data').addEventListener('click', () => { if(confirm("Clear all?")) { appData.requests = []; appData.sources = []; saveData(); } });
-
-    window.deleteRequest = (id) => { appData.requests = appData.requests.filter(r=>r.id!==id); saveData(); };
+    // --- Action Listeners ---
+    document.querySelectorAll('[data-nav]').forEach(a => a.onclick = (e) => showView(e.target.dataset.nav));
+    document.getElementById('cal-prev').onclick = () => { currentMonth.setMonth(currentMonth.getMonth()-1); renderCalendar(); };
+    document.getElementById('cal-next').onclick = () => { currentMonth.setMonth(currentMonth.getMonth()+1); renderCalendar(); };
+    document.getElementById('btn-confirm-import').onclick = () => {
+      const sid = 'src_'+Date.now();
+      appData.sources.push({ id: sid, label: document.getElementById('import-source-label').value || 'Import', date_logged: new Date().toISOString().slice(0,10) });
+      stagedImports.forEach(r => { r.id = 'req_'+Math.random(); r.source_id = sid; r.status = 'active'; appData.requests.push(r); });
+      document.getElementById('import-modal').classList.add('hidden'); save(); showView('view-master');
+    };
     
+    window.editRequest = (id) => {
+      const r = appData.requests.find(x => x.id === id);
+      document.getElementById('req-id').value = r.id;
+      document.getElementById('req-provider').value = r.provider_id;
+      document.getElementById('req-start').value = r.start_date;
+      document.getElementById('req-end').value = r.end_date;
+      document.getElementById('req-type').value = r.request_type;
+      document.getElementById('req-notes').value = r.notes;
+      document.getElementById('request-modal').classList.remove('hidden');
+    };
+
+    document.getElementById('request-form').onsubmit = (e) => {
+      e.preventDefault();
+      const id = document.getElementById('req-id').value;
+      const r = {
+        id: id || 'req_'+Math.random(),
+        provider_id: document.getElementById('req-provider').value,
+        start_date: document.getElementById('req-start').value,
+        end_date: document.getElementById('req-end').value || document.getElementById('req-start').value,
+        request_type: document.getElementById('req-type').value,
+        request_strength: document.getElementById('req-strength').value,
+        notes: document.getElementById('req-notes').value,
+        status: 'active'
+      };
+      if(id) appData.requests = appData.requests.map(x => x.id === id ? r : x); else appData.requests.push(r);
+      document.getElementById('request-modal').classList.add('hidden'); save();
+    };
+
+    // Stubs for remaining View renders (Simplified for this full-skeleton version)
+    const renderSummary = () => {}; const renderPhase2 = () => {}; const renderConflicts = () => {}; const renderSources = () => {};
+    
+    document.getElementById('btn-set-api').onclick = () => { const k = prompt("API Key:"); if(k) localStorage.setItem(API_KEY_KEY, k.trim()); };
+    document.getElementById('btn-toggle-dark').onclick = () => document.body.classList.toggle('dark-mode');
+    document.getElementById('btn-cancel-request').onclick = () => document.getElementById('request-modal').classList.add('hidden');
+    document.getElementById('btn-cancel-import').onclick = () => document.getElementById('import-modal').classList.add('hidden');
+
     renderAll();
+    showView('view-master');
   </script>
 </body>
 </html>
