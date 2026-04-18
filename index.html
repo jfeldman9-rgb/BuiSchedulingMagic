@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scheduler Intake System V2.3</title>
+    <title>Scheduler Intake System V2.4</title>
     <style>
         :root {
             --bg-main: #f4f6f8; --bg-surface: #ffffff; --border: #e0e4e8;
@@ -88,6 +88,7 @@
 
         /* Modals */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal.hidden { display: none; }
         .modal-content { background: var(--bg-surface); padding: 25px; border-radius: 8px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.3); transition: background 0.3s; }
         .modal-content.large { width: 900px; }
         .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
@@ -120,7 +121,7 @@
 </head>
 <body>
     <nav class="sidebar">
-        <div class="logo">Scheduler Intake v2.3</div>
+        <div class="logo">Scheduler Intake v2.4</div>
         <div style="font-size: 0.75rem; padding: 10px; background: var(--bg-main); border-radius: 6px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px;">
             <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#00875a; border-radius:50%;"></span> Hard Shift</div>
             <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#ffab00; border-radius:50%;"></span> Soft Shift</div>
@@ -395,7 +396,6 @@
             requests: []
         };
 
-        // Note the retained storage key so no data is lost
         let appData = JSON.parse(localStorage.getItem('scheduler_v2_2')) || seedData;
         let stagedImports = []; 
         let stagedImportMethod = 'manual';
@@ -815,6 +815,9 @@ Rules: Year is ${new Date().getFullYear()}. Single days must have identical star
             img.src = URL.createObjectURL(file);
         });
 
+        // -------------------------------------------------------------
+        // NEW V2.4 ENDPOINT: Changed to gemini-1.5-pro for maximum stability
+        // -------------------------------------------------------------
         document.getElementById('btn-upload-images').addEventListener('click', () => document.getElementById('file-upload').click());
         document.getElementById('file-upload').addEventListener('change', async (e) => {
             const files = e.target.files;
@@ -832,7 +835,8 @@ Rules: Year is ${new Date().getFullYear()}. Single days must have identical star
                 let parts = [{ "text": getDynamicPrompt() }];
                 for (let i = 0; i < files.length; i++) parts.push({ "inline_data": { "mime_type": "image/jpeg", "data": await resizeImage(files[i]) } });
                 
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+                // Pointing specifically to gemini-1.5-pro here!
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ "contents": [{ "parts": parts }], "generationConfig": { "temperature": 0.0 } })
                 });
