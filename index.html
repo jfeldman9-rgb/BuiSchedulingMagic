@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scheduler Intake System V2.1</title>
+    <title>Scheduler Intake System V2.2</title>
     <style>
         :root {
             --bg-main: #f4f6f8; --bg-surface: #ffffff; --border: #e0e4e8;
@@ -120,7 +120,7 @@
 </head>
 <body>
     <nav class="sidebar">
-        <div class="logo">Scheduler Intake v2.1</div>
+        <div class="logo">Scheduler Intake v2.2</div>
         <div style="font-size: 0.75rem; padding: 10px; background: var(--bg-main); border-radius: 6px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px;">
             <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#00875a; border-radius:50%;"></span> Hard Shift</div>
             <div style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; background:#ffab00; border-radius:50%;"></span> Soft Shift</div>
@@ -140,7 +140,7 @@
             <input type="file" id="file-upload" multiple accept="image/*" class="hidden">
             <button id="btn-upload-images" class="btn primary">📷 Upload Screenshots</button>
             <button id="btn-add-request" class="btn">+ Manual Request</button>
-            <button id="btn-manage-providers" class="btn outline">Manage Providers</button>
+            <button id="btn-manage-providers" class="btn primary outline">Manage Providers</button>
             <button id="btn-toggle-dark" class="btn sm">🌙 Toggle Dark Mode</button>
         </div>
     </nav>
@@ -386,29 +386,26 @@
     <script>
         // --- 1. State & Utilities ---
         const seedData = {
-            // Added comments inside to guide Alex, and upgraded schema for Phase 2
             providers: [
                 { id: "prov_abui", name: "Alex Bui", can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15, priority_score: 1, role: "partner" },
                 { id: "prov_jfeldman", name: "Jason Feldman", can_do_nights: true, can_do_peds: false, min_shifts: 8, max_shifts: 12, priority_score: 1, role: "partner" },
                 { id: "prov_smith", name: "Sarah Smith", can_do_nights: true, can_do_peds: true, min_shifts: 12, max_shifts: 16, priority_score: 2, role: "staff" }
-                // NOTE FOR ALEX: Add the rest of the group via the "Manage Providers" button in the app!
             ],
             sources: [],
             requests: []
         };
 
-        let appData = JSON.parse(localStorage.getItem('scheduler_v2_1')) || seedData;
+        let appData = JSON.parse(localStorage.getItem('scheduler_v2_2')) || seedData;
         let stagedImports = []; 
         let stagedImportMethod = 'manual';
         
         const today = new Date();
         let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1); 
 
-        // Dark Mode Init
         if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
         function saveData() {
-            localStorage.setItem('scheduler_v2_1', JSON.stringify(appData));
+            localStorage.setItem('scheduler_v2_2', JSON.stringify(appData));
             renderAll();
         }
 
@@ -487,7 +484,25 @@
             return uniqueConflicts;
         }
 
-        // --- 3. Rendering ---
+        // --- 3. Routing & Rendering ---
+        function showView(targetId) {
+            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+            document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
+
+            const targetView = document.getElementById(targetId);
+            const activeLink = document.querySelector(`.nav-links a[data-target="${targetId}"]`);
+
+            if (targetView) targetView.classList.remove('hidden');
+            if (activeLink) activeLink.classList.add('active');
+
+            if (targetId === 'view-calendar') renderCalendar();
+            if (targetId === 'view-summary') renderSummary();
+            if (targetId === 'view-conflicts') renderConflicts();
+            if (targetId === 'view-phase2') renderPhase2();
+            if (targetId === 'view-master') renderMasterTable();
+            if (targetId === 'view-intake') renderSourcesTable();
+        }
+
         function renderAll() {
             populateSelects();
             renderSourcesTable();
@@ -621,12 +636,10 @@
             const tbody = document.querySelector('#phase2-table tbody');
             tbody.innerHTML = '';
             appData.providers.forEach(prov => {
-                // Approximate "Requested Shifts" by looking at active 'wants_shift' requests
                 let shiftCount = 0;
                 appData.requests.filter(r => r.provider_id === prov.id && r.request_type === 'wants_shift' && r.status === 'active').forEach(r => {
                     const s = new Date(r.start_date);
                     const e = new Date(r.end_date || r.start_date);
-                    // Add 1 day for inclusive math
                     shiftCount += Math.round((e - s) / (1000 * 60 * 60 * 24)) + 1;
                 });
 
@@ -670,7 +683,16 @@
             }
         }
 
-        // --- Event Listeners: Filtering & Navigation ---
+        // --- Event Listeners: Routing, Filtering & Navigation ---
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('data-target');
+                if (!targetId) return;
+                showView(targetId);
+            });
+        });
+
         document.getElementById('filter-provider').addEventListener('change', renderMasterTable);
         document.getElementById('filter-type').addEventListener('change', renderMasterTable);
         document.getElementById('filter-status').addEventListener('change', renderMasterTable);
@@ -687,7 +709,6 @@
             if(changed > 0) { saveData(); showToast(`Marked ${changed} requests as Active.`); }
         });
 
-        // Dark Mode Toggle
         document.getElementById('btn-toggle-dark').addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
             localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
@@ -781,7 +802,6 @@ Rules: Year is ${new Date().getFullYear()}. Single days must have identical star
             }
         }
 
-        // Gemini API Pipeline
         const resizeImage = (file, maxWidth = 1600) => new Promise(resolve => {
             const img = new Image();
             img.onload = () => {
@@ -860,7 +880,7 @@ Rules: Year is ${new Date().getFullYear()}. Single days must have identical star
             } else { showToast('Nothing imported.', 'error'); }
             
             document.getElementById('import-modal').classList.add('hidden');
-            document.querySelector('[data-target="view-master"]').click();
+            showView('view-master');
         });
 
         // --- Modals: Requests ---
@@ -912,7 +932,7 @@ Rules: Year is ${new Date().getFullYear()}. Single days must have identical star
         window.deleteRequest = function(id) { if (confirm("Delete this request?")) { appData.requests = appData.requests.filter(r => r.id !== id); saveData(); showToast("Deleted", "error"); } };
         document.getElementById('btn-cancel-req-modal').addEventListener('click', () => document.getElementById('request-modal').classList.add('hidden'));
 
-        // --- Phase 2: Providers ---
+        // --- Modals: Providers ---
         function renderProvidersTable() {
             const tbody = document.querySelector('#providers-table tbody');
             tbody.innerHTML = '';
@@ -953,7 +973,7 @@ Rules: Year is ${new Date().getFullYear()}. Single days must have identical star
         });
 
         document.getElementById('btn-reset-data').addEventListener('click', () => {
-            if(confirm('WIPE all requests and sources? Providers and Settings will be saved.')) { appData.requests = []; appData.sources = []; saveData(); document.querySelector('[data-target="view-master"]').click(); }
+            if(confirm('WIPE all requests and sources? Providers and Settings will be saved.')) { appData.requests = []; appData.sources = []; saveData(); showView('view-master'); }
         });
 
         // Init
