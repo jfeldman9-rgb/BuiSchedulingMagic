@@ -3,156 +3,1773 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scheduler Intake v3.3</title>
+  <title>Scheduler Intake System v3.0</title>
   <style>
     :root {
-      --bg-main: #f4f6f8; --bg-surface: #ffffff; --border: #e0e4e8;
-      --text-main: #1a1f24; --text-muted: #637381;
-      --primary: #0052cc; --danger: #de350b;
-      --badge-yellow: #fffae6; --badge-green: #e3fcef;
+      --bg-main: #f4f6f8;
+      --bg-surface: #ffffff;
+      --border: #e0e4e8;
+      --text-main: #1a1f24;
+      --text-muted: #637381;
+      --primary: #0052cc;
+      --primary-hover: #0043a6;
+      --danger: #de350b;
+      --warning: #ffab00;
+      --success: #00875a;
+      --badge-yellow: #fffae6;
+      --badge-red: #ffebe6;
+      --badge-green: #e3fcef;
+      --badge-gray: #f4f5f7;
+      --shadow: 0 8px 24px rgba(0,0,0,0.16);
     }
+
     body.dark-mode {
-      --bg-main: #0d1117; --bg-surface: #161b22; --border: #30363d;
-      --text-main: #c9d1d9; --text-muted: #8b949e;
+      --bg-main: #0d1117;
+      --bg-surface: #161b22;
+      --border: #30363d;
+      --text-main: #c9d1d9;
+      --text-muted: #8b949e;
+      --badge-yellow: #4d3c00;
+      --badge-red: #4a0f00;
+      --badge-green: #003d29;
+      --badge-gray: #21262d;
+      --shadow: 0 10px 28px rgba(0,0,0,0.4);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, sans-serif; }
-    body { display: flex; height: 100vh; background: var(--bg-main); color: var(--text-main); }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    html, body { height: 100%; }
+    body { display: flex; background: var(--bg-main); color: var(--text-main); transition: background .2s, color .2s; }
     .hidden { display: none !important; }
-    .sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-    .nav-links { list-style: none; display: grid; gap: 4px; flex-grow: 1; }
-    .nav-links a { text-decoration: none; color: var(--text-muted); padding: 10px; border-radius: 8px; font-weight: 600; display: block; }
-    .nav-links a.active { background: var(--bg-main); color: var(--primary); }
-    .content { flex: 1; overflow-y: auto; padding: 25px; }
-    .btn { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-main); cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
-    .btn.primary { background: var(--primary); color: #fff; border: none; }
-    .table-container { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; overflow: auto; margin-top: 15px; }
+
+    .sidebar {
+      width: 260px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .logo { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+    .legend {
+      font-size: 0.78rem;
+      padding: 10px;
+      background: var(--bg-main);
+      border-radius: 8px;
+      display: grid;
+      gap: 6px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+    .dot { width: 10px; height: 10px; border-radius: 999px; }
+
+    .nav-links { list-style: none; display: grid; gap: 4px; }
+    .nav-links a {
+      display: block;
+      text-decoration: none;
+      color: var(--text-muted);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .nav-links a:hover, .nav-links a.active { background: var(--bg-main); color: var(--primary); }
+
+    .nav-actions { margin-top: auto; display: grid; gap: 10px; }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+      position: relative;
+    }
+
+    .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:hover { background: var(--bg-main); }
+    .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn.primary:hover { background: var(--primary-hover); }
+    .btn.outline { background: transparent; }
+    .btn.danger { color: var(--danger); border-color: var(--danger); }
+    .btn.sm { padding: 5px 9px; font-size: 0.82rem; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: var(--bg-surface);
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; min-width: 130px; flex: 1; }
+    .filter-group.search-box { flex: 2; min-width: 220px; }
+    .filter-group label { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .filter-group input, .filter-group select, .form-group input, .form-group select, .form-group textarea {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      color: var(--text-main);
+    }
+    .form-group textarea { min-height: 90px; resize: vertical; }
+
+    .table-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: auto;
+    }
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; font-size: 0.9rem; }
-    th { background: var(--bg-main); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; }
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .modal-content { background: var(--bg-surface); width: min(96vw, 900px); max-height: 90vh; overflow-y: auto; border-radius: 12px; padding: 20px; }
-    #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
-    .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: var(--bg-main); color: var(--text-muted); font-size: 0.82rem; text-transform: uppercase; position: sticky; top: 0; z-index: 1; }
+    td { font-size: 0.92rem; }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .status-active { background: var(--badge-green); color: var(--success); }
+    .status-review { background: var(--badge-yellow); color: #a06a00; }
+    .status-resolved { background: var(--badge-gray); color: #42526e; }
+    body.dark-mode .status-resolved { color: #c9d1d9; }
+
+    .color-green { background: #e3fcef; color: #006644; border-left-color: #00875a; }
+    .color-yellow { background: var(--badge-yellow); color: #a06a00; border-left-color: #ffab00; }
+    .color-red { background: var(--badge-red); color: #bf2600; border-left-color: #de350b; }
+    .color-orange { background: #fff4e5; color: #d97706; border-left-color: #d97706; }
+    .color-gray { background: var(--badge-gray); color: #42526e; border-left-color: #a5adba; }
+    body.dark-mode .color-green { background: #003d29; color: #79f2c0; }
+    body.dark-mode .color-yellow { color: #ffca3a; }
+    body.dark-mode .color-red { color: #ff7b72; }
+    body.dark-mode .color-orange { background: #4a2d00; color: #fbd38d; }
+    body.dark-mode .color-gray { background: #21262d; color: #c9d1d9; }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .cal-header { background: var(--bg-main); padding: 10px; text-align: center; font-weight: 700; color: var(--text-muted); }
+    .cal-day { background: var(--bg-surface); min-height: 108px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .cal-day.empty { background: var(--bg-main); }
+    .date-num { font-size: 0.84rem; color: var(--text-muted); text-align: right; }
+    .cal-req { font-size: 0.74rem; padding: 4px 6px; border-radius: 4px; border-left: 3px solid; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .conflict-card {
+      background: var(--badge-red);
+      border-left: 4px solid var(--danger);
+      padding: 14px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .conflict-card.warning { background: var(--badge-yellow); border-left-color: var(--warning); }
+    .conflict-card h4 { margin-bottom: 6px; }
+    .conflict-card.warning h4 { color: #a06a00; }
+    .conflict-card:not(.warning) h4 { color: var(--danger); }
+    body.dark-mode .conflict-card.warning h4 { color: #ffca3a; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.58);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-content {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      width: min(96vw, 560px);
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+    .modal-content.large { width: min(96vw, 980px); }
+    .modal-content h3 { margin-bottom: 10px; }
+    .form-group { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+
+    #toast-container {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 3000;
+      display: grid;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--bg-surface);
+      border-left: 4px solid var(--primary);
+      border-radius: 8px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      min-width: 220px;
+      font-weight: 700;
+      animation: slideIn .2s ease-out;
+    }
+    .toast.success { border-left-color: var(--success); }
+    .toast.error { border-left-color: var(--danger); }
+    @keyframes slideIn {
+      from { transform: translateX(14px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,.82);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    body.dark-mode #loading-overlay { background: rgba(13,17,23,.82); }
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border: 4px solid rgba(0,0,0,.1);
+      border-top: 4px solid var(--primary);
+      border-radius: 999px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 14px;
+    }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    .muted { color: var(--text-muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .pill-list { display: flex; gap: 8px; flex-wrap: wrap; }
+    .summary-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+    .provider-map-select { min-width: 180px; }
+
+    @media (max-width: 980px) {
+      body { flex-direction: column; }
+      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+      .content { padding: 18px; }
+      .calendar-grid { grid-template-columns: repeat(7, minmax(110px, 1fr)); overflow-x: auto; }
+    }
   </style>
 </head>
 <body>
   <nav class="sidebar">
-    <h2 style="color:var(--primary)">v3.3 Free</h2>
+    <div class="logo">Scheduler Intake v3.0</div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="dot" style="background:#00875a"></span> Hard Shift</div>
+      <div class="legend-item"><span class="dot" style="background:#ffab00"></span> Soft Shift</div>
+      <div class="legend-item"><span class="dot" style="background:#de350b"></span> Hard Off</div>
+      <div class="legend-item"><span class="dot" style="background:#d97706"></span> Soft Off</div>
+    </div>
+
     <ul class="nav-links">
-      <li><a href="#" data-nav="view-master" class="active">Master Requests</a></li>
-      <li><a href="#" data-nav="view-calendar">Calendar</a></li>
-      <li><a href="#" data-nav="view-export">Settings</a></li>
+      <li><a href="#" data-nav="view-intake">1. Intake / Sources</a></li>
+      <li><a href="#" data-nav="view-master" class="active">2. Master Requests</a></li>
+      <li><a href="#" data-nav="view-conflicts">3. Conflicts & Review <span id="nav-conflict-count" class="badge hidden" style="background:var(--danger);color:white;">0</span></a></li>
+      <li><a href="#" data-nav="view-calendar">4. Calendar</a></li>
+      <li><a href="#" data-nav="view-summary">5. Provider Summary</a></li>
+      <li><a href="#" data-nav="view-phase2">6. Phase 2 Constraints</a></li>
+      <li><a href="#" data-nav="view-export">7. Settings & Export</a></li>
     </ul>
-    <div style="display:grid; gap:8px;">
+
+    <div class="nav-actions">
       <input type="file" id="file-upload" class="hidden" multiple accept="image/*">
       <button class="btn primary" id="btn-upload-images">📷 Upload Screenshots</button>
-      <button class="btn" id="btn-toggle-dark">🌙 Dark Mode</button>
+      <button class="btn" id="btn-add-request">+ Manual Request</button>
+      <button class="btn outline" id="btn-manage-providers">Manage Providers</button>
+      <button class="btn sm" id="btn-toggle-dark">🌙 Toggle Dark Mode</button>
     </div>
   </nav>
 
   <main class="content">
-    <div id="loading-overlay" class="hidden"><div class="spinner"></div><h3 style="margin-top:10px;">Free Tier Processing...</h3></div>
+    <div id="toast-container"></div>
+
+    <div id="loading-overlay" class="hidden">
+      <div class="spinner"></div>
+      <h3 id="loading-text">Parsing screenshots with Gemini…</h3>
+    </div>
+
+    <section id="view-intake" class="view hidden">
+      <div class="view-header">
+        <div>
+          <h2>Source Tracking</h2>
+          <p class="muted">Every imported request batch should trace back to a source label.</p>
+        </div>
+        <button class="btn sm outline" id="btn-import-json">Paste JSON Fallback</button>
+      </div>
+      <div class="table-container">
+        <table id="sources-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Source Label</th>
+              <th>Method</th>
+              <th>Model</th>
+              <th>Date Logged</th>
+              <th>Req Count</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
     <section id="view-master" class="view">
-      <h2>Master Requests</h2>
-      <div class="table-container"><table id="master-table"><thead><tr><th>Provider</th><th>Start</th><th>End</th><th>Type</th><th>Notes</th><th>Action</th></tr></thead><tbody></tbody></table></div>
+      <div class="view-header">
+        <div>
+          <h2>Master Request Table</h2>
+          <p class="muted">One place for everything Alex receives.</p>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-group search-box">
+          <label>Search</label>
+          <input type="text" id="filter-search" placeholder="Search provider, notes, source…">
+        </div>
+        <div class="filter-group">
+          <label>Date Range</label>
+          <select id="filter-date-range">
+            <option value="all">All Time</option>
+            <option value="next_30">Next 30 Days</option>
+            <option value="this_month">This Month</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Provider</label>
+          <select id="filter-provider"><option value="all">All Providers</option></select>
+        </div>
+        <div class="filter-group">
+          <label>Type</label>
+          <select id="filter-type">
+            <option value="all">All Types</option>
+            <option value="off_request">Off Request</option>
+            <option value="wants_shift">Wants Shift</option>
+            <option value="call_request">Call Request</option>
+            <option value="no_call">No Call</option>
+            <option value="info">Info</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Status</label>
+          <select id="filter-status">
+            <option value="all">All</option>
+            <option value="active" selected>Active</option>
+            <option value="needs_review">Needs Review</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="master-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Type / Strength</th>
+              <th>Notes</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-conflicts" class="view hidden">
+      <div class="view-header">
+        <div>
+          <h2>Conflicts & Data Review</h2>
+          <p class="muted">This does not assign the schedule yet. It just flags collisions and contradictions.</p>
+        </div>
+        <button class="btn outline" id="btn-mark-all-active">Mark All Needs Review As Active</button>
+      </div>
+      <div id="conflicts-container"></div>
     </section>
 
     <section id="view-calendar" class="view hidden">
-      <h2 id="cal-month-label">Month</h2>
-      <div id="calendar-grid"></div>
+      <div class="view-header">
+        <div>
+          <h2>Calendar View</h2>
+          <p class="muted">Daily request map. Good for fast eyeballing clusters and collisions.</p>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <select id="cal-filter-provider"><option value="all">All Providers</option></select>
+          <button class="btn" id="cal-prev">&larr;</button>
+          <h3 id="cal-month-label" style="min-width:180px; text-align:center;">Month Year</h3>
+          <button class="btn" id="cal-next">&rarr;</button>
+        </div>
+      </div>
+      <div id="calendar-grid" class="calendar-grid"></div>
+    </section>
+
+    <section id="view-summary" class="view hidden">
+      <div class="view-header">
+        <div>
+          <h2>Provider Summary</h2>
+          <p class="muted">Rollup counts by provider.</p>
+        </div>
+      </div>
+      <div class="table-container">
+        <table id="summary-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Total Reqs</th>
+              <th>Hard Off</th>
+              <th>Soft Off</th>
+              <th>Wants Shift</th>
+              <th>Call / No-Call</th>
+              <th>Needs Review</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-phase2" class="view hidden">
+      <div class="view-header">
+        <div>
+          <h2>Phase 2 Constraints Preview</h2>
+          <p class="muted">Basic workload preview using active wants-shift requests versus min/max targets.</p>
+        </div>
+      </div>
+      <div class="table-container">
+        <table id="phase2-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Role</th>
+              <th>Min Target</th>
+              <th>Max Target</th>
+              <th>Requested Shift-Days</th>
+              <th>Nights?</th>
+              <th>Peds?</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
     <section id="view-export" class="view hidden">
-      <h2>Settings</h2>
-      <button class="btn outline" id="btn-set-api" style="margin-top:20px;">Set Gemini API Key</button>
-      <button class="btn danger outline" id="btn-reset-data">Wipe Data</button>
+      <div class="view-header">
+        <div>
+          <h2>Settings & Export</h2>
+          <p class="muted">Data export, API key management, and wipe controls.</p>
+        </div>
+      </div>
+      <div style="display:grid; gap:20px; max-width:760px;">
+        <div class="summary-card">
+          <h3>Data Export</h3>
+          <p class="muted" style="margin:8px 0 14px;">Download requests for scheduling or backup.</p>
+          <div class="pill-list">
+            <button class="btn primary" id="btn-export-csv">Export Requests to CSV</button>
+            <button class="btn outline" id="btn-export-json">Download JSON Backup</button>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <h3>Gemini API Configuration</h3>
+          <p class="muted" style="margin:8px 0 14px;">API key is stored only in this browser. The app will try current stable Gemini 2.5 models in sequence.</p>
+          <div class="pill-list">
+            <button class="btn outline" id="btn-set-api">Set / Update API Key</button>
+            <button class="btn danger" id="btn-clear-api">Clear API Key</button>
+          </div>
+          <p class="muted mono" id="api-key-status" style="margin-top:12px;"></p>
+        </div>
+
+        <div class="summary-card" style="border-color:var(--danger);">
+          <h3 style="color:var(--danger);">Danger Zone</h3>
+          <p class="muted" style="margin:8px 0 14px;">Wipes all sources and requests; keeps provider roster and settings.</p>
+          <button class="btn danger" id="btn-reset-data">Wipe All Requests & Sources</button>
+        </div>
+      </div>
     </section>
   </main>
 
   <div id="import-modal" class="modal hidden">
-    <div class="modal-content">
-      <h3>Review Import</h3>
-      <div class="table-container"><table id="import-preview-table"><thead><tr><th>Provider</th><th>Start</th><th>End</th><th>Type</th><th>Notes</th></tr></thead><tbody></tbody></table></div>
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+    <div class="modal-content large">
+      <h3>Verify Import</h3>
+      <p class="muted" style="margin-bottom:12px;">Invalid rows will be blocked. Unknown providers must be mapped before import.</p>
+
+      <div class="form-group">
+        <label>Source Label</label>
+        <input type="text" id="import-source-label" placeholder="e.g. July request screenshots - Dr. Wetzel text thread">
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:8px;">
+        <div class="muted" id="import-stats"></div>
+        <label style="display:flex; align-items:center; gap:8px; font-size:.9rem;"><input type="checkbox" id="import-skip-dupes" checked> Skip likely duplicates</label>
+      </div>
+
+      <div class="table-container" style="max-height:420px; overflow:auto;">
+        <table id="import-preview-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Provider</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Type</th>
+              <th>Strength</th>
+              <th>Notes / Issues</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="modal-actions">
         <button class="btn" id="btn-cancel-import">Cancel</button>
-        <button class="btn primary" id="btn-confirm-import">Import</button>
+        <button class="btn primary" id="btn-confirm-import">Confirm Valid Rows</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="request-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="request-modal-title">Edit Request</h3>
+      <form id="request-form">
+        <input type="hidden" id="req-id">
+        <input type="hidden" id="req-source-id">
+
+        <div class="form-group">
+          <label>Provider</label>
+          <select id="req-provider" required></select>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div class="form-group" style="flex:1; min-width:180px;">
+            <label>Start Date</label>
+            <input type="date" id="req-start" required>
+          </div>
+          <div class="form-group" style="flex:1; min-width:180px;">
+            <label>End Date</label>
+            <input type="date" id="req-end">
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <div class="form-group" style="flex:1; min-width:180px;">
+            <label>Type</label>
+            <select id="req-type">
+              <option value="off_request">Off Request</option>
+              <option value="wants_shift">Wants Shift</option>
+              <option value="call_request">Call Request</option>
+              <option value="no_call">No Call</option>
+              <option value="info">Info</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1; min-width:180px;">
+            <label>Strength</label>
+            <select id="req-strength">
+              <option value="hard">Hard</option>
+              <option value="soft">Soft</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <select id="req-status">
+            <option value="active">Active</option>
+            <option value="needs_review">Needs Review</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="req-notes" placeholder="Anything useful Alex should know"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" id="btn-cancel-request">Cancel</button>
+          <button type="submit" class="btn primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="providers-modal" class="modal hidden">
+    <div class="modal-content large">
+      <h3>Manage Providers & Phase 2 Rules</h3>
+
+      <div class="table-container" style="max-height:280px; overflow:auto; margin-bottom:14px;">
+        <table id="providers-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Min</th>
+              <th>Max</th>
+              <th>Nights?</th>
+              <th>Peds?</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+        <div class="form-group" style="flex:2; min-width:220px; margin:0;">
+          <label>Name</label>
+          <input type="text" id="new-prov-name" placeholder="Dr. House">
+        </div>
+        <div class="form-group" style="flex:1; min-width:140px; margin:0;">
+          <label>Role</label>
+          <select id="new-prov-role">
+            <option value="staff">Staff</option>
+            <option value="partner">Partner</option>
+            <option value="peds">Peds</option>
+          </select>
+        </div>
+        <div class="form-group" style="width:110px; margin:0;">
+          <label>Min</label>
+          <input type="number" id="new-prov-min" value="0" min="0">
+        </div>
+        <div class="form-group" style="width:110px; margin:0;">
+          <label>Max</label>
+          <input type="number" id="new-prov-max" value="20" min="0">
+        </div>
+        <label style="display:flex; align-items:center; gap:8px; padding-bottom:9px;"><input type="checkbox" id="new-prov-nights" checked> Nights</label>
+        <label style="display:flex; align-items:center; gap:8px; padding-bottom:9px;"><input type="checkbox" id="new-prov-peds"> Peds</label>
+        <button class="btn primary" id="btn-save-provider">Add</button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" id="btn-close-providers">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="error-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 style="color:var(--danger);">Gemini Parsing Error</h3>
+      <p class="muted" style="margin:8px 0 10px;">Gemini returned something the app could not parse as a JSON array, or all models failed.</p>
+      <textarea id="raw-error-text" class="mono" readonly style="width:100%; height:220px;"></textarea>
+      <div class="modal-actions">
+        <button class="btn" id="btn-close-error">Close</button>
       </div>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = 'scheduler_v3_3';
-    const API_KEY_KEY = 'gemini_api_key';
-    // PRODUCTION STABLE NAMES FOR FREE TIER
-    const GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro-vision'];
+    const STORAGE_KEY = 'scheduler_intake_v3_0';
+    const THEME_KEY = 'scheduler_intake_theme';
+    const GEMINI_KEY_STORAGE = 'gemini_api_key';
+    const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
 
-    let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { providers: [{id:'prov_abui', name:'Alex Bui'}, {id:'prov_jfeldman', name:'Jason Feldman'}], requests: [] };
+    const seedData = {
+      providers: [
+        { id: 'prov_abui', name: 'Alex Bui', role: 'partner', can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15 },
+        { id: 'prov_jfeldman', name: 'Jason Feldman', role: 'partner', can_do_nights: true, can_do_peds: false, min_shifts: 8, max_shifts: 12 },
+        { id: 'prov_minzer', name: 'Dr. Minzer', role: 'staff', can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15 },
+        { id: 'prov_anderson', name: 'Dr. Anderson', role: 'staff', can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15 },
+        { id: 'prov_gentz', name: 'Dr. Gentz', role: 'staff', can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15 },
+        { id: 'prov_bazzell', name: 'Dr. Bazzell', role: 'staff', can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15 },
+        { id: 'prov_wetzel', name: 'Dr. Wetzel', role: 'staff', can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15 },
+        { id: 'prov_quon', name: 'Dr. Quon', role: 'staff', can_do_nights: true, can_do_peds: false, min_shifts: 10, max_shifts: 15 }
+      ],
+      sources: [],
+      requests: []
+    };
+
+    let appData = loadAppData();
     let stagedImports = [];
+    let stagedImportMethod = 'manual';
+    let stagedImportModel = '';
+    let currentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); renderTable(); }
-    function escapeHtml(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-    function renderTable() {
-      const tbody = document.querySelector('#master-table tbody');
-      tbody.innerHTML = appData.requests.map(r => `<tr><td>${escapeHtml(r.provider_id)}</td><td>${r.start_date}</td><td>${r.end_date}</td><td>${r.request_type}</td><td>${escapeHtml(r.notes)}</td><td><button class="btn sm" onclick="deleteReq('${r.id}')">Del</button></td></tr>`).join('');
+    function loadAppData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return JSON.parse(JSON.stringify(seedData));
+        const parsed = JSON.parse(raw);
+        if (!parsed.providers || !parsed.sources || !parsed.requests) throw new Error('Bad schema');
+        return parsed;
+      } catch (err) {
+        return JSON.parse(JSON.stringify(seedData));
+      }
     }
 
-    async function callGemini(apiKey, parts) {
-      let lastErr = "";
+    function saveAppData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      renderAll();
+    }
+
+    function makeId(prefix) {
+      return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    }
+
+    function escapeHtml(value) {
+      if (value == null) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function slugifyProviderId(name) {
+      return 'prov_' + String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '').trim();
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 250);
+      }, 2800);
+    }
+
+    function setLoading(isLoading, message) {
+      const overlay = document.getElementById('loading-overlay');
+      const text = document.getElementById('loading-text');
+      if (message) text.textContent = message;
+      overlay.classList.toggle('hidden', !isLoading);
+    }
+
+    function getProviderById(id) {
+      return appData.providers.find(p => p.id === id) || null;
+    }
+
+    function getProviderNameRaw(id) {
+      const provider = getProviderById(id);
+      return provider ? provider.name : `Unknown (${id || 'missing'})`;
+    }
+
+    function getProviderNameHtml(id) {
+      const provider = getProviderById(id);
+      return provider ? escapeHtml(provider.name) : `<span style="color:var(--danger)">${escapeHtml(`Unknown (${id || 'missing'})`)}</span>`;
+    }
+
+    function getProviderShortName(id) {
+      const raw = getProviderNameRaw(id);
+      return raw.split(' ')[0] || raw;
+    }
+
+    function getSourceLabel(id) {
+      const source = appData.sources.find(s => s.id === id);
+      return source ? source.label : 'Manual/Unknown';
+    }
+
+    function getStatusBadgeClass(status) {
+      if (status === 'active') return 'status-active';
+      if (status === 'needs_review') return 'status-review';
+      return 'status-resolved';
+    }
+
+    function getColorClass(type, strength) {
+      if (type === 'wants_shift') return strength === 'hard' ? 'color-green' : 'color-yellow';
+      if (type === 'off_request') return strength === 'hard' ? 'color-red' : 'color-orange';
+      return 'color-gray';
+    }
+
+    function dayDiffInclusive(startDate, endDate) {
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date((endDate || startDate) + 'T00:00:00');
+      return Math.round((end - start) / 86400000) + 1;
+    }
+
+    function getCurrentConflictIds() {
+      const set = new Set();
+      computeConflicts(appData.requests).forEach(conflict => {
+        conflict.requestIds.forEach(id => set.add(id));
+      });
+      return set;
+    }
+
+    function normalizeRequest(rawReq) {
+      const req = Object.assign({}, rawReq || {});
+      req.provider_id = String(req.provider_id || 'prov_UNKNOWN').trim();
+      req.request_type = String(req.request_type || 'info').trim();
+      req.request_strength = String(req.request_strength || 'soft').trim().toLowerCase();
+      req.start_date = String(req.start_date || '').trim();
+      req.end_date = String(req.end_date || req.start_date || '').trim();
+      req.notes = String(req.notes || '').trim();
+      req.status = String(req.status || 'active').trim();
+
+      const issues = [];
+      const validTypes = ['off_request', 'wants_shift', 'call_request', 'no_call', 'info'];
+      const validStrengths = ['hard', 'soft'];
+      const validStatuses = ['active', 'needs_review', 'resolved'];
+      const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+
+      if (!getProviderById(req.provider_id)) issues.push('Unknown Provider');
+      if (!dateRe.test(req.start_date)) issues.push('Invalid Start Date');
+      if (!dateRe.test(req.end_date)) issues.push('Invalid End Date');
+      if (!validTypes.includes(req.request_type)) issues.push('Invalid Type');
+      if (!validStrengths.includes(req.request_strength)) {
+        req.request_strength = 'soft';
+        issues.push('Strength Normalized To Soft');
+      }
+      if (!validStatuses.includes(req.status)) req.status = 'active';
+
+      if (dateRe.test(req.start_date) && dateRe.test(req.end_date) && req.start_date > req.end_date) {
+        const temp = req.start_date;
+        req.start_date = req.end_date;
+        req.end_date = temp;
+        issues.push('Dates Swapped');
+      }
+
+      const currentYear = new Date().getFullYear();
+      if (dateRe.test(req.start_date)) {
+        const y = parseInt(req.start_date.slice(0, 4), 10);
+        if (y > currentYear + 1) issues.push('Future Year Warning');
+        if (y < currentYear - 1) issues.push('Past Year Warning');
+      }
+
+      const duplicate = appData.requests.some(existing => {
+        return existing.provider_id === req.provider_id &&
+               existing.start_date === req.start_date &&
+               (existing.end_date || existing.start_date) === (req.end_date || req.start_date) &&
+               existing.request_type === req.request_type;
+      });
+      if (duplicate) issues.push('Likely Duplicate');
+
+      const blockingIssues = issues.filter(issue => !['Likely Duplicate', 'Unknown Provider', 'Dates Swapped', 'Future Year Warning', 'Past Year Warning', 'Strength Normalized To Soft'].includes(issue));
+      return {
+        req,
+        issues,
+        isValid: blockingIssues.length === 0,
+        isUnknown: issues.includes('Unknown Provider'),
+        isDuplicate: duplicate
+      };
+    }
+
+    function computeConflicts(requests) {
+      const unresolved = requests.filter(r => r.status !== 'resolved');
+      const conflicts = [];
+
+      unresolved.forEach(req => {
+        if (!getProviderById(req.provider_id)) {
+          conflicts.push({
+            type: 'unmapped',
+            severity: 'high',
+            providerId: req.provider_id,
+            requestIds: [req.id],
+            message: `Request points to an unknown provider: ${req.provider_id}`
+          });
+        }
+      });
+
+      const byProvider = {};
+      unresolved.forEach(req => {
+        if (!byProvider[req.provider_id]) byProvider[req.provider_id] = [];
+        byProvider[req.provider_id].push(req);
+      });
+
+      Object.keys(byProvider).forEach(providerId => {
+        const items = byProvider[providerId];
+        for (let i = 0; i < items.length; i++) {
+          for (let j = i + 1; j < items.length; j++) {
+            const a = items[i];
+            const b = items[j];
+            const aEnd = a.end_date || a.start_date;
+            const bEnd = b.end_date || b.start_date;
+            const overlap = a.start_date <= bEnd && b.start_date <= aEnd;
+            if (!overlap) continue;
+
+            const contradiction = (
+              (a.request_type === 'off_request' && b.request_type === 'wants_shift') ||
+              (b.request_type === 'off_request' && a.request_type === 'wants_shift')
+            );
+
+            conflicts.push({
+              type: contradiction ? 'contradiction' : 'overlap',
+              severity: contradiction ? 'high' : 'medium',
+              providerId,
+              requestIds: [a.id, b.id].sort(),
+              message: contradiction
+                ? `Off request overlaps wants-shift request between ${a.start_date} and ${bEnd}.`
+                : `Multiple active requests overlap between ${a.start_date} and ${bEnd}.`
+            });
+          }
+        }
+      });
+
+      const unique = [];
+      const seen = new Set();
+      conflicts.forEach(conflict => {
+        const key = conflict.type + '|' + conflict.requestIds.join('|');
+        if (seen.has(key)) return;
+        seen.add(key);
+        unique.push(conflict);
+      });
+      return unique;
+    }
+
+    function renderAll() {
+      populateSelects();
+      renderSourcesTable();
+      renderMasterTable();
+      renderConflicts();
+      renderCalendar();
+      renderSummary();
+      renderPhase2();
+      updateApiKeyStatus();
+    }
+
+    function populateSelects() {
+      const providerOptions = appData.providers
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(provider => `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.name)}</option>`)
+        .join('');
+
+      ['req-provider', 'filter-provider', 'cal-filter-provider'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const currentValue = el.value;
+        const includeAll = id.includes('filter');
+        el.innerHTML = (includeAll ? '<option value="all">All Providers</option>' : '') + providerOptions;
+        if ([...el.options].some(option => option.value === currentValue)) {
+          el.value = currentValue;
+        }
+      });
+    }
+
+    function renderSourcesTable() {
+      const tbody = document.querySelector('#sources-table tbody');
+      tbody.innerHTML = '';
+      if (!appData.sources.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="muted">No sources imported yet.</td></tr>';
+        return;
+      }
+
+      appData.sources.slice().sort((a, b) => b.date_logged.localeCompare(a.date_logged)).forEach(source => {
+        const count = appData.requests.filter(request => request.source_id === source.id).length;
+        tbody.innerHTML += `
+          <tr>
+            <td class="mono">${escapeHtml(source.id).slice(0, 10)}…</td>
+            <td>${escapeHtml(source.label || '')}</td>
+            <td>${escapeHtml(source.import_method || 'manual')}</td>
+            <td>${escapeHtml(source.model_used || '-')}</td>
+            <td>${escapeHtml(source.date_logged || '')}</td>
+            <td>${count}</td>
+          </tr>`;
+      });
+    }
+
+    function renderMasterTable() {
+      const tbody = document.querySelector('#master-table tbody');
+      const providerFilter = document.getElementById('filter-provider').value;
+      const typeFilter = document.getElementById('filter-type').value;
+      const statusFilter = document.getElementById('filter-status').value;
+      const dateRangeFilter = document.getElementById('filter-date-range').value;
+      const searchTerm = document.getElementById('filter-search').value.trim().toLowerCase();
+      const conflictIds = getCurrentConflictIds();
+
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      let rangeStart = '0000-01-01';
+      let rangeEnd = '9999-12-31';
+
+      if (dateRangeFilter === 'next_30') {
+        rangeStart = todayStr;
+        const thirty = new Date(today);
+        thirty.setDate(thirty.getDate() + 30);
+        rangeEnd = thirty.toISOString().slice(0, 10);
+      } else if (dateRangeFilter === 'this_month') {
+        const start = new Date(today.getFullYear(), today.getMonth(), 1);
+        const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        rangeStart = start.toISOString().slice(0, 10);
+        rangeEnd = end.toISOString().slice(0, 10);
+      }
+
+      const filtered = appData.requests.filter(request => {
+        const requestEnd = request.end_date || request.start_date;
+        const providerName = getProviderNameRaw(request.provider_id).toLowerCase();
+        const sourceLabel = getSourceLabel(request.source_id).toLowerCase();
+        const haystack = [providerName, request.notes || '', request.request_type || '', sourceLabel].join(' ').toLowerCase();
+
+        return (providerFilter === 'all' || request.provider_id === providerFilter) &&
+               (typeFilter === 'all' || request.request_type === typeFilter) &&
+               (statusFilter === 'all' || request.status === statusFilter) &&
+               (dateRangeFilter === 'all' || (request.start_date <= rangeEnd && requestEnd >= rangeStart)) &&
+               (!searchTerm || haystack.includes(searchTerm));
+      }).sort((a, b) => {
+        if (a.start_date !== b.start_date) return a.start_date.localeCompare(b.start_date);
+        return getProviderNameRaw(a.provider_id).localeCompare(getProviderNameRaw(b.provider_id));
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="muted">No requests found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(request => {
+        const colorClass = getColorClass(request.request_type, request.request_strength);
+        const isRange = (request.end_date || request.start_date) !== request.start_date;
+        const sourceLabel = getSourceLabel(request.source_id);
+        const flagged = conflictIds.has(request.id);
+        const statusText = flagged && request.status === 'active' ? 'active ⚠' : request.status.replace('_', ' ');
+
+        return `
+          <tr style="${request.status === 'resolved' ? 'opacity:.55;' : ''}">
+            <td><strong>${getProviderNameHtml(request.provider_id)}</strong></td>
+            <td>${escapeHtml(request.start_date)}</td>
+            <td>${isRange ? escapeHtml(request.end_date) : '<span class="muted">-</span>'}</td>
+            <td><span class="badge ${colorClass}">${escapeHtml(request.request_type).replace('_', ' ')} (${escapeHtml(request.request_strength)})</span></td>
+            <td title="${escapeHtml(request.notes || '')}" style="max-width:240px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(request.notes || '')}</td>
+            <td title="${escapeHtml(sourceLabel)}" style="max-width:180px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sourceLabel)}</td>
+            <td><span class="badge ${getStatusBadgeClass(request.status)}">${escapeHtml(statusText)}</span></td>
+            <td>
+              <div class="pill-list">
+                <button class="btn sm" data-action="edit-request" data-id="${escapeHtml(request.id)}">Edit</button>
+                <button class="btn sm danger" data-action="delete-request" data-id="${escapeHtml(request.id)}">Del</button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function renderConflicts() {
+      const container = document.getElementById('conflicts-container');
+      const badge = document.getElementById('nav-conflict-count');
+      const conflicts = computeConflicts(appData.requests);
+
+      if (!conflicts.length) {
+        badge.classList.add('hidden');
+        container.innerHTML = '<p class="muted">No active conflicts detected. Clean data.</p>';
+        return;
+      }
+
+      badge.textContent = String(conflicts.length);
+      badge.classList.remove('hidden');
+      container.innerHTML = conflicts.map(conflict => {
+        const providerName = escapeHtml(getProviderNameRaw(conflict.providerId));
+        const cardClass = conflict.severity === 'high' ? 'conflict-card' : 'conflict-card warning';
+        return `<div class="${cardClass}"><h4>${escapeHtml(conflict.type.toUpperCase())}: ${providerName}</h4><p>${escapeHtml(conflict.message)}</p></div>`;
+      }).join('');
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      const label = document.getElementById('cal-month-label');
+      const providerFilter = document.getElementById('cal-filter-provider').value;
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+
+      label.textContent = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+      grid.innerHTML = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => `<div class="cal-header">${day}</div>`).join('');
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let i = 0; i < firstDay; i++) {
+        grid.innerHTML += '<div class="cal-day empty"></div>';
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const requests = appData.requests.filter(request => {
+          const end = request.end_date || request.start_date;
+          return request.status !== 'resolved' &&
+                 (providerFilter === 'all' || request.provider_id === providerFilter) &&
+                 request.start_date <= dateStr && end >= dateStr;
+        });
+
+        const blocks = requests.map(request => {
+          const color = getColorClass(request.request_type, request.request_strength);
+          const short = escapeHtml(getProviderShortName(request.provider_id));
+          const strength = request.request_strength === 'hard' ? 'H' : 'S';
+          return `<div class="cal-req ${color}" data-action="edit-request" data-id="${escapeHtml(request.id)}" title="${escapeHtml(request.notes || '')}">${short} (${strength})</div>`;
+        }).join('');
+
+        grid.innerHTML += `<div class="cal-day"><div class="date-num">${day}</div>${blocks}</div>`;
+      }
+    }
+
+    function renderSummary() {
+      const tbody = document.querySelector('#summary-table tbody');
+      tbody.innerHTML = appData.providers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(provider => {
+        const requests = appData.requests.filter(request => request.provider_id === provider.id);
+        return `
+          <tr>
+            <td><strong>${escapeHtml(provider.name)}</strong></td>
+            <td>${requests.length}</td>
+            <td>${requests.filter(r => r.request_type === 'off_request' && r.request_strength === 'hard').length}</td>
+            <td>${requests.filter(r => r.request_type === 'off_request' && r.request_strength === 'soft').length}</td>
+            <td>${requests.filter(r => r.request_type === 'wants_shift').length}</td>
+            <td>${requests.filter(r => r.request_type === 'call_request' || r.request_type === 'no_call').length}</td>
+            <td>${requests.filter(r => r.status === 'needs_review').length}</td>
+          </tr>`;
+      }).join('') || '<tr><td colspan="7" class="muted">No providers found.</td></tr>';
+    }
+
+    function renderPhase2() {
+      const tbody = document.querySelector('#phase2-table tbody');
+      tbody.innerHTML = appData.providers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(provider => {
+        let requestedShiftDays = 0;
+        appData.requests.filter(request => request.provider_id === provider.id && request.request_type === 'wants_shift' && request.status === 'active').forEach(request => {
+          requestedShiftDays += dayDiffInclusive(request.start_date, request.end_date || request.start_date);
+        });
+
+        let statusBadge = '<span class="badge status-active">Good</span>';
+        if ((provider.min_shifts || 0) > 0 && requestedShiftDays < provider.min_shifts) {
+          statusBadge = '<span class="badge status-review">Under Min</span>';
+        }
+        if ((provider.max_shifts || 0) > 0 && requestedShiftDays > provider.max_shifts) {
+          statusBadge = '<span class="badge" style="background:var(--danger);color:white;">Over Max</span>';
+        }
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(provider.name)}</strong></td>
+            <td style="text-transform:capitalize;">${escapeHtml(provider.role || 'staff')}</td>
+            <td>${provider.min_shifts || 0}</td>
+            <td>${provider.max_shifts || 0}</td>
+            <td><strong>${requestedShiftDays}</strong></td>
+            <td>${provider.can_do_nights ? 'Yes' : 'No'}</td>
+            <td>${provider.can_do_peds ? 'Yes' : 'No'}</td>
+            <td>${statusBadge}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    function renderProvidersTable() {
+      const tbody = document.querySelector('#providers-table tbody');
+      tbody.innerHTML = appData.providers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(provider => {
+        return `
+          <tr>
+            <td class="mono muted">${escapeHtml(provider.id)}</td>
+            <td><strong>${escapeHtml(provider.name)}</strong></td>
+            <td style="text-transform:capitalize;">${escapeHtml(provider.role || 'staff')}</td>
+            <td>${provider.min_shifts || 0}</td>
+            <td>${provider.max_shifts || 0}</td>
+            <td>${provider.can_do_nights ? 'Y' : 'N'}</td>
+            <td>${provider.can_do_peds ? 'Y' : 'N'}</td>
+            <td><button class="btn sm danger" data-action="delete-provider" data-id="${escapeHtml(provider.id)}">Del</button></td>
+          </tr>`;
+      }).join('');
+    }
+
+    function updateApiKeyStatus() {
+      const el = document.getElementById('api-key-status');
+      const key = localStorage.getItem(GEMINI_KEY_STORAGE);
+      el.textContent = key ? 'Gemini API key is saved in this browser.' : 'No Gemini API key saved yet.';
+    }
+
+    function showView(viewId) {
+      document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+      document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
+
+      const view = document.getElementById(viewId);
+      const link = document.querySelector(`.nav-links a[data-nav="${viewId}"]`);
+      if (view) view.classList.remove('hidden');
+      if (link) link.classList.add('active');
+
+      if (viewId === 'view-calendar') renderCalendar();
+      if (viewId === 'view-summary') renderSummary();
+      if (viewId === 'view-conflicts') renderConflicts();
+      if (viewId === 'view-phase2') renderPhase2();
+      if (viewId === 'view-intake') renderSourcesTable();
+      if (viewId === 'view-master') renderMasterTable();
+    }
+
+    function openRequestModal(requestId) {
+      const modal = document.getElementById('request-modal');
+      const title = document.getElementById('request-modal-title');
+      const form = document.getElementById('request-form');
+      form.reset();
+
+      if (requestId) {
+        const request = appData.requests.find(item => item.id === requestId);
+        if (!request) return;
+        title.textContent = 'Edit Request';
+        document.getElementById('req-id').value = request.id;
+        document.getElementById('req-source-id').value = request.source_id || 'src_manual';
+        document.getElementById('req-provider').value = request.provider_id;
+        document.getElementById('req-start').value = request.start_date;
+        document.getElementById('req-end').value = request.end_date || request.start_date;
+        document.getElementById('req-type').value = request.request_type;
+        document.getElementById('req-strength').value = request.request_strength;
+        document.getElementById('req-status').value = request.status || 'active';
+        document.getElementById('req-notes').value = request.notes || '';
+      } else {
+        title.textContent = 'New Request';
+        document.getElementById('req-id').value = '';
+        document.getElementById('req-source-id').value = 'src_manual';
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeRequestModal() {
+      document.getElementById('request-modal').classList.add('hidden');
+    }
+
+    function openProvidersModal() {
+      renderProvidersTable();
+      document.getElementById('providers-modal').classList.remove('hidden');
+    }
+
+    function closeProvidersModal() {
+      document.getElementById('providers-modal').classList.add('hidden');
+    }
+
+    function closeImportModal() {
+      document.getElementById('import-modal').classList.add('hidden');
+      stagedImports = [];
+      stagedImportMethod = 'manual';
+      stagedImportModel = '';
+    }
+
+    function openErrorModal(text) {
+      document.getElementById('raw-error-text').value = text || '';
+      document.getElementById('error-modal').classList.remove('hidden');
+    }
+
+    function closeErrorModal() {
+      document.getElementById('error-modal').classList.add('hidden');
+    }
+
+    function syncNeedsReviewFlags() {
+      const conflictIds = getCurrentConflictIds();
+      appData.requests.forEach(request => {
+        if (request.status === 'resolved') return;
+        if (conflictIds.has(request.id) && request.status === 'active') {
+          request.status = 'needs_review';
+        }
+      });
+    }
+
+    function getDynamicPrompt() {
+      const roster = appData.providers
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(provider => `- "${provider.name}" -> ${provider.id}`)
+        .join('\n');
+
+      return [
+        'You are an operations assistant for an anesthesia group.',
+        'Extract scheduling requests from the uploaded screenshots into a strict JSON array.',
+        'Map names to these exact provider IDs:',
+        roster,
+        'If the provider is not on the list, use provider_id "prov_UNKNOWN" and mention the detected name in notes.',
+        `Assume the year is ${new Date().getFullYear()} unless the screenshot clearly says otherwise.`,
+        'Return ONLY a JSON array. No markdown. No commentary.',
+        'Schema:',
+        '[',
+        '  {',
+        '    "provider_id": "prov_id_here",',
+        '    "request_type": "off_request|wants_shift|call_request|no_call|info",',
+        '    "request_strength": "hard|soft",',
+        '    "start_date": "YYYY-MM-DD",',
+        '    "end_date": "YYYY-MM-DD",',
+        '    "notes": "brief summary"',
+        '  }',
+        ']',
+        'Rules:',
+        '- Single day requests must have identical start_date and end_date.',
+        '- Multi-day continuous blocks should be one object spanning the full date range.',
+        '- If a person requests multiple separate days, output separate objects.',
+        '- If the screenshot is ambiguous, choose soft strength.',
+        '- Preserve important qualifiers in notes, like no call, vacation, prefers, available, etc.'
+      ].join('\n');
+    }
+
+    async function resizeImage(file, maxWidth = 1600) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          try {
+            const scale = Math.min(1, maxWidth / img.width);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(objectUrl);
+            resolve(canvas.toDataURL('image/jpeg', 0.82).split(',')[1]);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('Could not read image.'));
+        };
+        img.src = objectUrl;
+      });
+    }
+
+    async function callGeminiWithFallback(apiKey, parts) {
+      const errors = [];
       for (const model of GEMINI_MODELS) {
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: [{ parts }] })
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts }],
+              generationConfig: { temperature: 0.0 }
+            })
           });
-          const data = await res.json();
-          if (res.ok && data.candidates) return data.candidates[0].content.parts[0].text;
-          lastErr = data.error ? data.error.message : `Status ${res.status}`;
-        } catch (e) { lastErr = e.message; }
+
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || data.error) {
+            throw new Error(data?.error?.message || `HTTP ${response.status}`);
+          }
+
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!text) throw new Error('Malformed API response: no text returned');
+          
+          return { model, text };
+        } catch (err) {
+          console.warn(`Model failed: ${model}`, err.message);
+          errors.push(`[${model}]: ${err.message}`);
+        }
       }
-      throw new Error(`Model Error: ${lastErr}`);
+      throw new Error("All Gemini models failed. \\n\\n" + errors.join('\\n\\n'));
     }
 
-    document.getElementById('btn-upload-images').addEventListener('click', () => document.getElementById('file-upload').click());
-    document.getElementById('file-upload').addEventListener('change', async (e) => {
-      const files = Array.from(e.target.files);
-      const apiKey = localStorage.getItem(API_KEY_KEY);
-      if(!apiKey) return alert("Set API Key in Settings.");
-      
-      document.getElementById('loading-overlay').classList.remove('hidden');
+    function processAndOpenPreview(rawText, method, modelUsed) {
       try {
-        const prompt = `Return ONLY JSON array. Current date is ${new Date().toDateString()}. Roster: ${JSON.stringify(appData.providers)}. Schema: [{"provider_id":"", "request_type":"off_request|wants_shift", "start_date":"YYYY-MM-DD", "end_date":"YYYY-MM-DD", "notes":""}]`;
-        const parts = [{ text: prompt }];
-        for (const f of files) {
-          const base64 = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result.split(',')[1]); reader.readAsDataURL(f); });
-          parts.push({ inline_data: { mime_type: "image/jpeg", data: base64 } });
-        }
-        const text = await callGemini(apiKey, parts);
-        stagedImports = JSON.parse(text.replace(/```json/g, '').replace(/```/g, ''));
+        const clean = String(rawText || '').replace(/```json/gi, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        if (!Array.isArray(parsed)) throw new Error('Gemini did not return a JSON array.');
+
+        stagedImports = [];
+        stagedImportMethod = method || 'manual';
+        stagedImportModel = modelUsed || '';
+
         const tbody = document.querySelector('#import-preview-table tbody');
-        tbody.innerHTML = stagedImports.map(r => `<tr><td>${escapeHtml(r.provider_id)}</td><td>${r.start_date}</td><td>${r.end_date}</td><td>${r.request_type}</td><td>${escapeHtml(r.notes)}</td></tr>`).join('');
+        tbody.innerHTML = '';
+        let okCount = 0;
+        let duplicateCount = 0;
+        let unknownCount = 0;
+        let blockedCount = 0;
+
+        parsed.forEach((item, index) => {
+          const result = normalizeRequest(item);
+          stagedImports.push(result);
+          if (result.isValid && !result.isDuplicate && !result.isUnknown) okCount++;
+          if (result.isDuplicate) duplicateCount++;
+          if (result.isUnknown) unknownCount++;
+          if (!result.isValid) blockedCount++;
+
+          const rowStyle = !result.isValid ? 'background: var(--badge-red);' : (result.isDuplicate || result.isUnknown ? 'background: var(--badge-yellow);' : '');
+          let providerCell = getProviderNameHtml(result.req.provider_id);
+          if (result.isUnknown) {
+            const options = appData.providers.slice().sort((a, b) => a.name.localeCompare(b.name)).map(provider => {
+              return `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.name)}</option>`;
+            }).join('');
+            providerCell = `<select class="provider-map-select" data-stage-index="${index}"><option value="">-- Map Provider --</option>${options}</select>`;
+          }
+
+          const statusText = !result.isValid ? 'Blocked' : (result.isDuplicate ? 'Skip' : (result.isUnknown ? 'Map Required' : 'OK'));
+          tbody.innerHTML += `
+            <tr style="${rowStyle}">
+              <td>${statusText}</td>
+              <td>${providerCell}</td>
+              <td>${escapeHtml(result.req.start_date)}</td>
+              <td>${escapeHtml(result.req.end_date)}</td>
+              <td>${escapeHtml(result.req.request_type)}</td>
+              <td>${escapeHtml(result.req.request_strength)}</td>
+              <td style="max-width:280px; white-space:normal;">
+                <div>${escapeHtml(result.req.notes || '')}</div>
+                <div class="muted" style="font-size:.8rem; margin-top:4px;">${escapeHtml(result.issues.join(', '))}</div>
+              </td>
+            </tr>`;
+        });
+
+        document.getElementById('import-stats').textContent = `Found ${parsed.length} rows; ${okCount} ready; ${duplicateCount} duplicates; ${unknownCount} unknown providers; ${blockedCount} blocked.`;
+        document.getElementById('import-source-label').value = `${method === 'api' ? 'Gemini Vision Import' : 'Manual JSON Import'} - ${new Date().toLocaleString()}`;
         document.getElementById('import-modal').classList.remove('hidden');
-      } catch (err) { alert(err.message); }
-      finally { document.getElementById('loading-overlay').classList.add('hidden'); e.target.value = ''; }
-    });
+      } catch (err) {
+        openErrorModal(rawText);
+      }
+    }
 
-    document.getElementById('btn-confirm-import').addEventListener('click', () => {
-      stagedImports.forEach(r => { r.id = 'req_'+Math.random(); appData.requests.push(r); });
-      saveData(); document.getElementById('import-modal').classList.add('hidden');
-    });
+    function collectMappedProvidersFromPreview() {
+      document.querySelectorAll('.provider-map-select').forEach(select => {
+        const stageIndex = Number(select.getAttribute('data-stage-index'));
+        if (!Number.isNaN(stageIndex) && stagedImports[stageIndex] && select.value) {
+          stagedImports[stageIndex].req.provider_id = select.value;
+          stagedImports[stageIndex].isUnknown = false;
+        }
+      });
+    }
 
-    window.deleteReq = (id) => { appData.requests = appData.requests.filter(r=>r.id!==id); saveData(); };
-    document.querySelectorAll('[data-nav]').forEach(a => a.addEventListener('click', e => {
-      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-      document.getElementById(e.target.dataset.nav).classList.remove('hidden');
-    }));
-    document.getElementById('btn-set-api').addEventListener('click', () => { const k = prompt("API Key:"); if(k) localStorage.setItem(API_KEY_KEY, k.trim()); });
-    document.getElementById('btn-toggle-dark').addEventListener('click', () => document.body.classList.toggle('dark-mode'));
-    document.getElementById('btn-cancel-import').addEventListener('click', () => document.getElementById('import-modal').classList.add('hidden'));
+    function confirmImport() {
+      const label = document.getElementById('import-source-label').value.trim();
+      if (!label) {
+        alert('Source label is required.');
+        return;
+      }
 
-    renderTable();
+      collectMappedProvidersFromPreview();
+      const skipDuplicates = document.getElementById('import-skip-dupes').checked;
+      const sourceId = makeId('src');
+      const requestsToImport = [];
+
+      stagedImports.forEach(stage => {
+        const normalizedAgain = normalizeRequest(stage.req);
+        if (!normalizedAgain.isValid) return;
+        if (!getProviderById(normalizedAgain.req.provider_id)) return;
+        if (skipDuplicates && normalizedAgain.isDuplicate) return;
+
+        requestsToImport.push({
+          id: makeId('req'),
+          provider_id: normalizedAgain.req.provider_id,
+          request_type: normalizedAgain.req.request_type,
+          request_strength: normalizedAgain.req.request_strength,
+          start_date: normalizedAgain.req.start_date,
+          end_date: normalizedAgain.req.end_date || normalizedAgain.req.start_date,
+          notes: normalizedAgain.req.notes,
+          status: 'active',
+          source_id: sourceId,
+          created_at: new Date().toISOString()
+        });
+      });
+
+      if (!requestsToImport.length) {
+        showToast('Nothing imported.', 'error');
+        closeImportModal();
+        return;
+      }
+
+      appData.sources.push({
+        id: sourceId,
+        label,
+        import_method: stagedImportMethod,
+        model_used: stagedImportModel || '-',
+        date_logged: new Date().toISOString().slice(0, 10)
+      });
+
+      appData.requests.push(...requestsToImport);
+      syncNeedsReviewFlags();
+      saveAppData();
+      closeImportModal();
+      showView('view-master');
+      showToast(`Imported ${requestsToImport.length} requests.`);
+    }
+
+    function exportCsv() {
+      const rows = [['Provider', 'Start Date', 'End Date', 'Type', 'Strength', 'Status', 'Notes', 'Source']];
+      appData.requests.forEach(request => {
+        rows.push([
+          getProviderNameRaw(request.provider_id),
+          request.start_date,
+          request.end_date || request.start_date,
+          request.request_type,
+          request.request_strength,
+          request.status,
+          request.notes || '',
+          getSourceLabel(request.source_id)
+        ]);
+      });
+      const csv = rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'scheduler_requests.csv';
+      a.click();
+      showToast('CSV downloaded.');
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'scheduler_backup.json';
+      a.click();
+      showToast('JSON backup downloaded.');
+    }
+
+    function wipeRequestsAndSources() {
+      if (!confirm('Wipe all requests and sources? Provider roster and settings stay.')) return;
+      appData.requests = [];
+      appData.sources = [];
+      saveAppData();
+      showView('view-master');
+      showToast('Requests and sources wiped.', 'error');
+    }
+
+    function setApiKey() {
+      const existing = localStorage.getItem(GEMINI_KEY_STORAGE) || '';
+      const next = prompt('Enter Gemini API key:', existing);
+      if (!next) return;
+      localStorage.setItem(GEMINI_KEY_STORAGE, next.trim());
+      updateApiKeyStatus();
+      showToast('API key saved.');
+    }
+
+    function clearApiKey() {
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+      updateApiKeyStatus();
+      showToast('API key cleared.', 'error');
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      localStorage.setItem(THEME_KEY, document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    }
+
+    function applySavedTheme() {
+      if (localStorage.getItem(THEME_KEY) === 'dark') {
+        document.body.classList.add('dark-mode');
+      }
+    }
+
+    function deleteRequest(requestId) {
+      if (!confirm('Delete this request?')) return;
+      appData.requests = appData.requests.filter(request => request.id !== requestId);
+      saveAppData();
+      showToast('Request deleted.', 'error');
+    }
+
+    function deleteProvider(providerId) {
+      const hasRequests = appData.requests.some(request => request.provider_id === providerId);
+      if (hasRequests) {
+        alert('Cannot delete a provider that still has requests.');
+        return;
+      }
+      if (!confirm('Delete this provider?')) return;
+      appData.providers = appData.providers.filter(provider => provider.id !== providerId);
+      saveAppData();
+      renderProvidersTable();
+      showToast('Provider deleted.', 'error');
+    }
+
+    function addProvider() {
+      const name = document.getElementById('new-prov-name').value.trim();
+      if (!name) {
+        showToast('Provider name required.', 'error');
+        return;
+      }
+      const id = slugifyProviderId(name);
+      if (appData.providers.some(provider => provider.id === id)) {
+        showToast('Provider already exists.', 'error');
+        return;
+      }
+
+      appData.providers.push({
+        id,
+        name,
+        role: document.getElementById('new-prov-role').value,
+        min_shifts: parseInt(document.getElementById('new-prov-min').value || '0', 10) || 0,
+        max_shifts: parseInt(document.getElementById('new-prov-max').value || '0', 10) || 0,
+        can_do_nights: document.getElementById('new-prov-nights').checked,
+        can_do_peds: document.getElementById('new-prov-peds').checked
+      });
+
+      document.getElementById('new-prov-name').value = '';
+      document.getElementById('new-prov-min').value = '0';
+      document.getElementById('new-prov-max').value = '20';
+      document.getElementById('new-prov-nights').checked = true;
+      document.getElementById('new-prov-peds').checked = false;
+
+      saveAppData();
+      renderProvidersTable();
+      showToast('Provider added.');
+    }
+
+    async function handleImageUpload(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+
+      let apiKey = localStorage.getItem(GEMINI_KEY_STORAGE);
+      if (!apiKey) {
+        apiKey = prompt('Enter Gemini API key:');
+        if (!apiKey) {
+          event.target.value = '';
+          return;
+        }
+        localStorage.setItem(GEMINI_KEY_STORAGE, apiKey.trim());
+      }
+
+      setLoading(true, 'Parsing screenshots with Gemini…');
+      try {
+        const parts = [{ text: getDynamicPrompt() }];
+        for (const file of files) {
+          parts.push({
+            inline_data: {
+              mime_type: 'image/jpeg',
+              data: await resizeImage(file)
+            }
+          });
+        }
+
+        const result = await callGeminiWithFallback(apiKey, parts);
+        processAndOpenPreview(result.text, 'api', result.model);
+        showToast(`Parsed with ${result.model}.`);
+      } catch (err) {
+        if (String(err.message || '').toLowerCase().includes('api key')) {
+          localStorage.removeItem(GEMINI_KEY_STORAGE);
+        }
+        alert('API Error: ' + err.message);
+      } finally {
+        setLoading(false);
+        event.target.value = '';
+        updateApiKeyStatus();
+      }
+    }
+
+    function bindEvents() {
+      document.querySelectorAll('.nav-links a').forEach(link => {
+        link.addEventListener('click', event => {
+          event.preventDefault();
+          const target = link.getAttribute('data-nav');
+          if (target) showView(target);
+        });
+      });
+
+      document.getElementById('filter-search').addEventListener('input', renderMasterTable);
+      document.getElementById('filter-date-range').addEventListener('change', renderMasterTable);
+      document.getElementById('filter-provider').addEventListener('change', renderMasterTable);
+      document.getElementById('filter-type').addEventListener('change', renderMasterTable);
+      document.getElementById('filter-status').addEventListener('change', renderMasterTable);
+      document.getElementById('cal-filter-provider').addEventListener('change', renderCalendar);
+
+      document.getElementById('cal-prev').addEventListener('click', () => {
+        currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+        renderCalendar();
+      });
+      document.getElementById('cal-next').addEventListener('click', () => {
+        currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+        renderCalendar();
+      });
+
+      document.getElementById('btn-toggle-dark').addEventListener('click', toggleDarkMode);
+      document.getElementById('btn-upload-images').addEventListener('click', () => document.getElementById('file-upload').click());
+      document.getElementById('file-upload').addEventListener('change', handleImageUpload);
+      document.getElementById('btn-import-json').addEventListener('click', () => {
+        const raw = prompt('Paste JSON array from Gemini:');
+        if (raw) processAndOpenPreview(raw, 'manual', 'manual');
+      });
+
+      document.getElementById('btn-add-request').addEventListener('click', () => openRequestModal());
+      document.getElementById('btn-manage-providers').addEventListener('click', openProvidersModal);
+      document.getElementById('btn-mark-all-active').addEventListener('click', () => {
+        let changed = 0;
+        appData.requests.forEach(request => {
+          if (request.status === 'needs_review') {
+            request.status = 'active';
+            changed++;
+          }
+        });
+        saveAppData();
+        showToast(changed ? `Marked ${changed} requests active.` : 'Nothing changed.');
+      });
+
+      document.getElementById('btn-cancel-request').addEventListener('click', closeRequestModal);
+      document.getElementById('btn-cancel-import').addEventListener('click', closeImportModal);
+      document.getElementById('btn-close-providers').addEventListener('click', closeProvidersModal);
+      document.getElementById('btn-close-error').addEventListener('click', closeErrorModal);
+      document.getElementById('btn-confirm-import').addEventListener('click', confirmImport);
+      document.getElementById('btn-save-provider').addEventListener('click', addProvider);
+
+      document.getElementById('btn-set-api').addEventListener('click', setApiKey);
+      document.getElementById('btn-clear-api').addEventListener('click', clearApiKey);
+      document.getElementById('btn-export-csv').addEventListener('click', exportCsv);
+      document.getElementById('btn-export-json').addEventListener('click', exportJson);
+      document.getElementById('btn-reset-data').addEventListener('click', wipeRequestsAndSources);
+
+      document.getElementById('request-form').addEventListener('submit', event => {
+        event.preventDefault();
+        const startDate = document.getElementById('req-start').value;
+        const endDate = document.getElementById('req-end').value || startDate;
+        const request = {
+          id: document.getElementById('req-id').value || makeId('req'),
+          provider_id: document.getElementById('req-provider').value,
+          source_id: document.getElementById('req-source-id').value || 'src_manual',
+          start_date: startDate,
+          end_date: endDate,
+          request_type: document.getElementById('req-type').value,
+          request_strength: document.getElementById('req-strength').value,
+          status: document.getElementById('req-status').value,
+          notes: document.getElementById('req-notes').value.trim(),
+          updated_at: new Date().toISOString()
+        };
+
+        const normalized = normalizeRequest(request);
+        if (!normalized.isValid) {
+          alert('Fix the request first: ' + normalized.issues.join(', '));
+          return;
+        }
+
+        const existingIndex = appData.requests.findIndex(item => item.id === request.id);
+        if (existingIndex >= 0) appData.requests[existingIndex] = request;
+        else appData.requests.push(request);
+
+        syncNeedsReviewFlags();
+        saveAppData();
+        closeRequestModal();
+        showToast(existingIndex >= 0 ? 'Request updated.' : 'Request created.');
+      });
+
+      document.body.addEventListener('click', event => {
+        const actionEl = event.target.closest('[data-action]');
+        if (!actionEl) return;
+        const action = actionEl.getAttribute('data-action');
+        const id = actionEl.getAttribute('data-id');
+
+        if (action === 'edit-request' && id) openRequestModal(id);
+        if (action === 'delete-request' && id) deleteRequest(id);
+        if (action === 'delete-provider' && id) deleteProvider(id);
+      });
+    }
+
+    function init() {
+      applySavedTheme();
+      bindEvents();
+      renderAll();
+      showView('view-master');
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
